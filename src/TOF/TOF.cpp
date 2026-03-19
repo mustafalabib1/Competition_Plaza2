@@ -3,9 +3,9 @@
 #include <VL53L0X.h>
 
 // XSHUT pins
-#define LEFT_XSHUT   13
-#define FRONT_XSHUT  14
-#define RIGHT_XSHUT  27
+#define LEFT_XSHUT 13
+#define FRONT_XSHUT 14
+#define RIGHT_XSHUT 27
 
 // I2C pins
 #define SDA_PIN 21
@@ -19,7 +19,7 @@ VL53L0X sensorRight;
 // Distances
 float LeftDistance, RightDistance, FrontDistance;
 
-// Calibration 
+// Calibration
 float LeftCalibrationBase = 0;
 float RightCalibrationBase = 0;
 float FrontCalibrationBase = 0;
@@ -65,24 +65,37 @@ void TofInit()
   sensorFront.startContinuous();
   sensorRight.startContinuous();
 }
+void PowerOffTofSensors()
+{
+  // 1. Tell the sensors to stop firing cleanly
+  sensorLeft.stopContinuous();
+  sensorFront.stopContinuous();
+  sensorRight.stopContinuous();
 
+  // 2. Physically cut their power using XSHUT
+  digitalWrite(LEFT_XSHUT, LOW);
+  digitalWrite(FRONT_XSHUT, LOW);
+  digitalWrite(RIGHT_XSHUT, LOW);
+
+  Serial.println("First Stage Complete: ToF Sensors Powered Down.");
+}
 float getFrontDistance()
 {
-  FrontDistance = sensorFront.readRangeContinuousMillimeters() / 10.0; 
-  return (FrontDistance > FrontCalibrationBase) ?
-         (FrontDistance - FrontCalibrationBase) * 5.0 / FrontCalibrationFactor : 0;
+  FrontDistance = sensorFront.readRangeContinuousMillimeters() / 10.0;
+  return (FrontDistance > FrontCalibrationBase) ? (FrontDistance - FrontCalibrationBase) * 5.0 / FrontCalibrationFactor : 0;
+  // return sensorFront.readRangeContinuousMillimeters() ;
 }
 
 float getRightDistance()
 {
   RightDistance = sensorRight.readRangeContinuousMillimeters() / 10.0;
-  return (RightDistance > RightCalibrationBase) ?
-         (RightDistance - RightCalibrationBase) * 5.0 / RightCalibrationFactor : 0;
+  return (RightDistance > RightCalibrationBase) ? (RightDistance - RightCalibrationBase) * 5.0 / RightCalibrationFactor : 0;
+  // return sensorRight.readRangeContinuousMillimeters() ;
 }
 
 float getLeftDistance()
 {
   LeftDistance = sensorLeft.readRangeContinuousMillimeters() / 10.0;
-  return (LeftDistance > LeftCalibrationBase) ?
-         (LeftDistance - LeftCalibrationBase) * 5.0 / LeftCalibrationFactor : 0;
+  return (LeftDistance > LeftCalibrationBase) ? (LeftDistance - LeftCalibrationBase) * 5.0 / LeftCalibrationFactor : 0;
+  // return sensorLeft.readRangeContinuousMillimeters() ;
 }
