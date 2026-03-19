@@ -1,0 +1,88 @@
+#include "tof.h"
+#include <Wire.h>
+#include <VL53L0X.h>
+
+// XSHUT pins
+#define LEFT_XSHUT   13
+#define FRONT_XSHUT  14
+#define RIGHT_XSHUT  27
+
+// I2C pins
+#define SDA_PIN 21
+#define SCL_PIN 22
+
+// Create sensor objects
+VL53L0X sensorLeft;
+VL53L0X sensorFront;
+VL53L0X sensorRight;
+
+// Distances
+float LeftDistance, RightDistance, FrontDistance;
+
+// Calibration 
+float LeftCalibrationBase = 0;
+float RightCalibrationBase = 0;
+float FrontCalibrationBase = 0;
+
+float LeftCalibrationFactor = 1;
+float RightCalibrationFactor = 1;
+float FrontCalibrationFactor = 1;
+
+void TofInit()
+{
+  Wire.begin(SDA_PIN, SCL_PIN);
+
+  pinMode(LEFT_XSHUT, OUTPUT);
+  pinMode(FRONT_XSHUT, OUTPUT);
+  pinMode(RIGHT_XSHUT, OUTPUT);
+
+  // Turn OFF all sensors
+  digitalWrite(LEFT_XSHUT, LOW);
+  digitalWrite(FRONT_XSHUT, LOW);
+  digitalWrite(RIGHT_XSHUT, LOW);
+  delay(10);
+
+  // Activate LEFT sensor
+  digitalWrite(LEFT_XSHUT, HIGH);
+  delay(10);
+  sensorLeft.init();
+  sensorLeft.setAddress(0x30);
+
+  // Activate FRONT sensor
+  digitalWrite(FRONT_XSHUT, HIGH);
+  delay(10);
+  sensorFront.init();
+  sensorFront.setAddress(0x31);
+
+  // Activate RIGHT sensor
+  digitalWrite(RIGHT_XSHUT, HIGH);
+  delay(10);
+  sensorRight.init();
+  sensorRight.setAddress(0x32);
+
+  // Start continuous mode
+  sensorLeft.startContinuous();
+  sensorFront.startContinuous();
+  sensorRight.startContinuous();
+}
+
+float getFrontDistance()
+{
+  FrontDistance = sensorFront.readRangeContinuousMillimeters() / 10.0; 
+  return (FrontDistance > FrontCalibrationBase) ?
+         (FrontDistance - FrontCalibrationBase) * 5.0 / FrontCalibrationFactor : 0;
+}
+
+float getRightDistance()
+{
+  RightDistance = sensorRight.readRangeContinuousMillimeters() / 10.0;
+  return (RightDistance > RightCalibrationBase) ?
+         (RightDistance - RightCalibrationBase) * 5.0 / RightCalibrationFactor : 0;
+}
+
+float getLeftDistance()
+{
+  LeftDistance = sensorLeft.readRangeContinuousMillimeters() / 10.0;
+  return (LeftDistance > LeftCalibrationBase) ?
+         (LeftDistance - LeftCalibrationBase) * 5.0 / LeftCalibrationFactor : 0;
+}
