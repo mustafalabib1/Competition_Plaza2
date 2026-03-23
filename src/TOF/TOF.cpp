@@ -19,15 +19,6 @@ VL53L0X sensorRight;
 // Distances
 float LeftDistance, RightDistance, FrontDistance;
 
-// Calibration
-float LeftCalibrationBase = 0;
-float RightCalibrationBase = 0;
-float FrontCalibrationBase = 0;
-
-float LeftCalibrationFactor = 1;
-float RightCalibrationFactor = 1;
-float FrontCalibrationFactor = 1;
-
 void TofInit()
 {
   Wire.begin(SDA_PIN, SCL_PIN);
@@ -82,20 +73,20 @@ void PowerOffTofSensors()
 float getFrontDistance()
 {
   FrontDistance = sensorFront.readRangeContinuousMillimeters() / 10.0;
-  return (FrontDistance > FrontCalibrationBase) ? (FrontDistance - FrontCalibrationBase) * 5.0 / FrontCalibrationFactor : 0;
+  return (FrontDistance > robotState.frontCalibrationBase) ? (FrontDistance - robotState.frontCalibrationBase) * 5.0 / robotState.frontCalibrationFactor : 0;
   // return sensorFront.readRangeContinuousMillimeters() ;
 }
 
 float getRightDistance()
 {
   RightDistance = sensorRight.readRangeContinuousMillimeters() / 10.0;
-  return (RightDistance > RightCalibrationBase) ? (RightDistance - RightCalibrationBase) * 5.0 / RightCalibrationFactor : 0;
+  return (RightDistance > robotState.rightCalibrationBase) ? (RightDistance - robotState.rightCalibrationBase) * 5.0 / robotState.rightCalibrationFactor : 0;
   // return sensorRight.readRangeContinuousMillimeters() ;
 }
 
 float getLeftDistance()
 {
   LeftDistance = sensorLeft.readRangeContinuousMillimeters() / 10.0;
-  return (LeftDistance > LeftCalibrationBase) ? (LeftDistance - LeftCalibrationBase) * 5.0 / LeftCalibrationFactor : 0;
+  return (LeftDistance > robotState.leftCalibrationBase) ? (LeftDistance - robotState.leftCalibrationBase) * 5.0 / robotState.leftCalibrationFactor : 0;
   // return sensorLeft.readRangeContinuousMillimeters() ;
 }
