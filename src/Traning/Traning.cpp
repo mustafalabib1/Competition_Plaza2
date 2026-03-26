@@ -6,7 +6,7 @@
 #include "AngleController/AngleController.h"
 #include "RC/RC.h"
 #include "TOF/TOF.h"
-
+#include "Servos/Servo.h"
 // Bluetooth communication object
 BluetoothSerial SerialBT;
 
@@ -144,6 +144,41 @@ void loop()
             saveRobotStateToEEPROM();
             SerialBT.println("Saved");
         }
+        else if (command.startsWith("Shoulder"))
+        {
+            int angle = command.substring(8).toInt();
+            shoulderAngle = angle;
+            Shoulder.write(shoulderAngle);
+            SerialBT.printf("Shoulder Angle: %d\n", shoulderAngle);
+        }
+        else if (command.startsWith("Elbow"))
+        {
+            int angle = command.substring(5).toInt();
+            elbowAngle = angle;
+            Elbow.write(elbowAngle);
+            SerialBT.printf("Elbow Angle: %d\n", elbowAngle);
+        }
+        else if (command.startsWith("Gripper1"))
+        {
+            int angle = command.substring(8).toInt();
+            gripper1Angle = angle;
+            Gripper1.write(gripper1Angle);
+            SerialBT.printf("Gripper1 Angle: %d\n", gripper1Angle);
+        }
+        else if (command.startsWith("Gripper2"))
+        {
+            int angle = command.substring(8).toInt();
+            gripper2Angle = angle;
+            Gripper2.write(gripper2Angle);
+            SerialBT.printf("Gripper2 Angle: %d\n", gripper2Angle);
+        }
+        else if (command.startsWith("Wrist"))
+        {
+            int angle = command.substring(5).toInt();
+            wristAngle = angle;
+            Wrist.write(wristAngle);
+            SerialBT.printf("Wrist Angle: %d\n", wristAngle);
+        }
         else if (command.startsWith("help"))
         {
             printHelp();
@@ -259,5 +294,10 @@ void printHelp()
     SerialBT.println("  save                 - Save settings to EEPROM");
     SerialBT.println("  rc                   - Enter RC mode");
     SerialBT.println("  resetpid             - Reset PID parameters to defaults");
+    SerialBT.println(" shoulder <angle>       - Set Shoulder servo angle (0-180)");
+    SerialBT.println(" elbow <angle>          - Set Elbow servo angle (0-180)");
+    SerialBT.println(" gripper1 <angle>      - Set Gripper1 servo angle (0-180)");
+    SerialBT.println(" gripper2 <angle>      - Set Gripper2 servo speed (0-180, 90=stop)");
+    SerialBT.println(" wrist <angle>         - Set Wrist servo angle (0-180)");
     SerialBT.println("  help                 - Print this help message");
 }
