@@ -139,6 +139,40 @@ void loop()
             robotState.uturnAngle = command.substring(10).toInt();
             SerialBT.printf("UTurn Angle: %d\n", robotState.uturnAngle);
         }
+        else if (command.startsWith("islefthand"))
+        {
+            String value = command.substring(10);
+            value.trim();
+            if (value == "true" || value == "1")
+            {
+                robotState.isLeftHandSide = true;
+                SerialBT.println("Set to Left-Hand Side Maze Solving");
+            }
+            else if (value == "false" || value == "0")
+            {
+                robotState.isLeftHandSide = false;
+                SerialBT.println("Set to Right-Hand Side Maze Solving");
+            }
+            else
+            {
+                SerialBT.println("Invalid value for isLeftHand. Use 'true' or 'false'.");
+            }
+        }
+        else if (command.startsWith("ft"))
+        {
+            robotState.frontThreshold = command.substring(2).toFloat();
+            SerialBT.printf("Front Distance Threshold: %.2f\n", robotState.frontThreshold);
+        }
+        else if (command.startsWith("rf"))
+        {
+            robotState.rightThreshold = command.substring(2).toFloat();
+            SerialBT.printf("Right Distance Threshold: %.2f\n", robotState.rightThreshold);
+        }
+        else if (command.startsWith("lf"))
+        {
+            robotState.leftThreshold = command.substring(2).toFloat();
+            SerialBT.printf("Left Distance Threshold: %.2f\n", robotState.leftThreshold);
+        }
         else if (command.startsWith("save"))
         {
             saveRobotStateToEEPROM();
@@ -294,6 +328,10 @@ void printHelp()
     SerialBT.println("  save                 - Save settings to EEPROM");
     SerialBT.println("  rc                   - Enter RC mode");
     SerialBT.println("  resetpid             - Reset PID parameters to defaults");
+    SerialBT.println(" islefthand <true/false> - Set maze solving side (current: " + String(robotState.isLeftHandSide ? "Left" : "Right") + ")");
+    SerialBT.println(" ft <value>            - Set Front Distance Threshold (current: " + String(robotState.frontThreshold) + ")");
+    SerialBT.println(" rt <value>            - Set Right Distance Threshold (current: " + String(robotState.rightThreshold) + ")");
+    SerialBT.println(" lt <value>            - Set Left Distance Threshold (current: " + String(robotState.leftThreshold) + ")");
     SerialBT.println(" shoulder <angle>       - Set Shoulder servo angle (0-180)");
     SerialBT.println(" elbow <angle>          - Set Elbow servo angle (0-180)");
     SerialBT.println(" gripper1 <angle>      - Set Gripper1 servo angle (0-180)");

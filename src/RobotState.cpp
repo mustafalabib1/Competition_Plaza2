@@ -21,6 +21,13 @@ void initializeRobotState()
   robotState.ki = 0.0;
   robotState.kd = 0.0;
   robotState.uturnAngle = 180;
+  robotState.isLeftHandSide = true;
+  robotState.frontThreshold = 20.0;
+  robotState.leftThreshold = 20.0;
+  robotState.rightThreshold = 20.0;
+
+  // Initialize EEPROM
+  EEPROM.begin(512);
 }
 
 void saveRobotStateToEEPROM()
@@ -68,6 +75,18 @@ void saveRobotStateToEEPROM()
 
   EEPROM.put(robotState.eepromAddress, robotState.uturnAngle);
   robotState.eepromAddress += sizeof(robotState.uturnAngle);
+
+  EEPROM.put(robotState.eepromAddress, robotState.isLeftHandSide);
+  robotState.eepromAddress += sizeof(robotState.isLeftHandSide);
+
+  EEPROM.put(robotState.eepromAddress, robotState.frontThreshold);
+  robotState.eepromAddress += sizeof(robotState.frontThreshold);
+
+  EEPROM.put(robotState.eepromAddress, robotState.leftThreshold);
+  robotState.eepromAddress += sizeof(robotState.leftThreshold);
+
+  EEPROM.put(robotState.eepromAddress, robotState.rightThreshold);
+  robotState.eepromAddress += sizeof(robotState.rightThreshold);
 
   EEPROM.commit();
 }
@@ -120,7 +139,19 @@ void loadRobotStateFromEEPROM()
 
   EEPROM.get(robotState.eepromAddress, robotState.uturnAngle);
   robotState.eepromAddress += sizeof(robotState.uturnAngle);
-  
+
+  EEPROM.get(robotState.eepromAddress, robotState.isLeftHandSide);
+  robotState.eepromAddress += sizeof(robotState.isLeftHandSide);
+
+  EEPROM.get(robotState.eepromAddress, robotState.frontThreshold);
+  robotState.eepromAddress += sizeof(robotState.frontThreshold);
+
+  EEPROM.get(robotState.eepromAddress, robotState.leftThreshold);
+  robotState.eepromAddress += sizeof(robotState.leftThreshold);
+
+  EEPROM.get(robotState.eepromAddress, robotState.rightThreshold);
+  robotState.eepromAddress += sizeof(robotState.rightThreshold);
+
   // Validate PID parameters and set defaults if invalid
   if (robotState.kp < 0 || robotState.kp > 100)
   {

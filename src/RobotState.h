@@ -3,7 +3,8 @@
 #include <Arduino.h>
 
 // Robot State Structure
-struct RobotState {
+struct RobotState
+{
   // Motor parameters
   int baseSpeed = 200;
   int rightRatio = 100;
@@ -23,6 +24,14 @@ struct RobotState {
   float kp = 1.0;
   float ki = 0.0;
   float kd = 0.0;
+
+  // Maze solving state
+  bool isLeftHandSide = true; // Default to left-hand side
+
+  float frontThreshold = 20.0; // Distance threshold for obstacle detection in cm
+  float leftThreshold = 20.0;
+  float rightThreshold = 20.0;
+
 
   // EEPROM address tracking
   unsigned int eepromAddress = 0;
