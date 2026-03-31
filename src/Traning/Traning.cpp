@@ -7,6 +7,7 @@
 #include "RC/RC.h"
 #include "TOF/TOF.h"
 #include "Servos/Servo.h"
+#include "MazeSolve/MazeSolve.h"
 // Bluetooth communication object
 BluetoothSerial SerialBT;
 
@@ -232,6 +233,30 @@ void loop()
             }
             SerialBT.println("Exited RC mode.");
         }
+        else if (command.startsWith("stab"))
+        {
+            SerialBT.println("Entered Stabilizer Test mode. Send 'X' to exit.");
+            char stabCommand = 's';
+            while (stabCommand != 'X' && stabCommand != 'x')
+            {
+                if (SerialBT.available())
+                {
+                    stabCommand = SerialBT.read();
+                    stablilizerControlTest(stabCommand);
+                }
+                delay(10); // Prevent tight loop from starving the watchdog
+            }
+            SerialBT.println("Exited Stabilizer Test mode.");
+        }
+        else if (command == "maze")
+        {
+            SerialBT.println("Solving Maze...");
+            solveMazeInit();
+            while (SerialBT.readStringUntil('\n') != "stopmaze")
+            {
+                solveMaze();
+            }
+        }
         else if (command == "right")
         {
             rotateDegrees(-90);
@@ -327,13 +352,14 @@ void printHelp()
     SerialBT.println("System Commands:");
     SerialBT.println("  save                 - Save settings to EEPROM");
     SerialBT.println("  rc                   - Enter RC mode");
+    SerialBT.println("  stab                 - Enter Stabilizer Test mode");
     SerialBT.println("  resetpid             - Reset PID parameters to defaults");
     SerialBT.println(" islefthand <true/false> - Set maze solving side (current: " + String(robotState.isLeftHandSide ? "Left" : "Right") + ")");
     SerialBT.println(" ft <value>            - Set Front Distance Threshold (current: " + String(robotState.frontThreshold) + ")");
     SerialBT.println(" rt <value>            - Set Right Distance Threshold (current: " + String(robotState.rightThreshold) + ")");
     SerialBT.println(" lt <value>            - Set Left Distance Threshold (current: " + String(robotState.leftThreshold) + ")");
-    SerialBT.println(" shoulder <angle>       - Set Shoulder servo angle (0-180)");
-    SerialBT.println(" elbow <angle>          - Set Elbow servo angle (0-180)");
+    SerialBT.println(" shoulder <angle>      - Set Shoulder servo angle (0-180)");
+    SerialBT.println(" elbow <angle>         - Set Elbow servo angle (0-180)");
     SerialBT.println(" gripper1 <angle>      - Set Gripper1 servo angle (0-180)");
     SerialBT.println(" gripper2 <angle>      - Set Gripper2 servo speed (0-180, 90=stop)");
     SerialBT.println(" wrist <angle>         - Set Wrist servo angle (0-180)");
