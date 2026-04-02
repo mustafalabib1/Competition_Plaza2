@@ -1,6 +1,6 @@
 #include "tof.h"
 #include <Wire.h>
-#include <VL53L0X.h>
+#include <VL53L1X.h>
 
 // XSHUT pins
 #define LEFT_XSHUT 13
@@ -12,81 +12,137 @@
 #define SCL_PIN 22
 
 // Create sensor objects
-VL53L0X sensorLeft;
-VL53L0X sensorFront;
-VL53L0X sensorRight;
+VL53L1X sensorLeft;
+VL53L1X sensorFront;
+VL53L1X sensorRight;
 
 // Distances
 float LeftDistance, RightDistance, FrontDistance;
 
 void TofInit()
 {
-  Wire.begin(SDA_PIN, SCL_PIN);
+    Serial.begin(115200);
+    Wire.begin(SDA_PIN, SCL_PIN);
 
-  pinMode(LEFT_XSHUT, OUTPUT);
-  pinMode(FRONT_XSHUT, OUTPUT);
-  pinMode(RIGHT_XSHUT, OUTPUT);
+    Serial.println("\n--- Starting ToF Boot Sequence ---");
 
-  // Turn OFF all sensors
-  digitalWrite(LEFT_XSHUT, LOW);
-  digitalWrite(FRONT_XSHUT, LOW);
-  digitalWrite(RIGHT_XSHUT, LOW);
-  delay(10);
+    // 1. HARDWARE SHUTDOWN (Active LOW)
+    // Pull all XSHUT pins LOW to force all sensors to sleep
+    pinMode(LEFT_XSHUT, OUTPUT);
+    pinMode(FRONT_XSHUT, OUTPUT);
+    pinMode(RIGHT_XSHUT, OUTPUT);
+    digitalWrite(LEFT_XSHUT, LOW);
+    digitalWrite(FRONT_XSHUT, LOW);
+    digitalWrite(RIGHT_XSHUT, LOW);
+    delay(150); // Crucial: Give capacitors time to drain completely
 
-  // Activate LEFT sensor
-  digitalWrite(LEFT_XSHUT, HIGH);
-  delay(10);
-  sensorLeft.init();
-  sensorLeft.setAddress(0x30);
+    /* --- Activate LEFT sensor --- */
+    Serial.println("Waking up LEFT sensor...");
+    digitalWrite(LEFT_XSHUT, HIGH); // Pull HIGH to wake up
+    delay(50);                      // Give it time to boot (Datasheet says max 1.2ms, but 50ms is safe)
 
-  // Activate FRONT sensor
-  digitalWrite(FRONT_XSHUT, HIGH);
-  delay(10);
-  sensorFront.init();
-  sensorFront.setAddress(0x31);
+    sensorLeft.setTimeout(500);
+    if (!sensorLeft.init())
+    {
+        Serial.println("ERROR: Failed to initialize LEFT sensor!");
+    }
+    else
+    {
+        sensorLeft.setAddress(0x30);
+        sensorLeft.setDistanceMode(VL53L1X::Short);   // Configure distance mode
+        sensorLeft.setMeasurementTimingBudget(50000); // 50ms timing budget
+        sensorLeft.startContinuous(50);
+        Serial.println("LEFT sensor ready at 0x30.");
+    }
 
-  // Activate RIGHT sensor
-  digitalWrite(RIGHT_XSHUT, HIGH);
-  delay(10);
-  sensorRight.init();
-  sensorRight.setAddress(0x32);
+    /* --- Activate FRONT sensor --- */
+    Serial.println("Waking up FRONT sensor...");
+    digitalWrite(FRONT_XSHUT, HIGH);
+    delay(50);
 
-  // Start continuous mode
-  sensorLeft.startContinuous();
-  sensorFront.startContinuous();
-  sensorRight.startContinuous();
+    sensorFront.setTimeout(500);
+    if (!sensorFront.init())
+    {
+        Serial.println("ERROR: Failed to initialize FRONT sensor!");
+    }
+    else
+    {
+        sensorFront.setAddress(0x31);
+        sensorFront.setDistanceMode(VL53L1X::Short);
+        sensorFront.setMeasurementTimingBudget(50000);
+        sensorFront.startContinuous(50);
+        Serial.println("FRONT sensor ready at 0x31.");
+    }
+
+    /* --- Activate RIGHT sensor --- */
+    Serial.println("Waking up RIGHT sensor...");
+    digitalWrite(RIGHT_XSHUT, HIGH);
+    delay(50);
+
+    sensorRight.setTimeout(500);
+    if (!sensorRight.init())
+    {
+        Serial.println("ERROR: Failed to initialize RIGHT sensor!");
+    }
+    else
+    {
+        sensorRight.setAddress(0x32);
+        sensorRight.setDistanceMode(VL53L1X::Short);
+        sensorRight.setMeasurementTimingBudget(50000);
+        sensorRight.startContinuous(50);
+        Serial.println("RIGHT sensor ready at 0x32.");
+    }
 }
+
 void PowerOffTofSensors()
 {
-  // 1. Tell the sensors to stop firing cleanly
-  sensorLeft.stopContinuous();
-  sensorFront.stopContinuous();
-  sensorRight.stopContinuous();
+    sensorLeft.stopContinuous();
+    sensorFront.stopContinuous();
+    sensorRight.stopContinuous();
 
-  // 2. Physically cut their power using XSHUT
-  digitalWrite(LEFT_XSHUT, LOW);
-  digitalWrite(FRONT_XSHUT, LOW);
-  digitalWrite(RIGHT_XSHUT, LOW);
+    // Pull LOW to physically force all sensors to sleep and save power
+    digitalWrite(LEFT_XSHUT, LOW);
+    digitalWrite(FRONT_XSHUT, LOW);
+    digitalWrite(RIGHT_XSHUT, LOW);
 
-  Serial.println("First Stage Complete: ToF Sensors Powered Down.");
+    Serial.println("First Stage Complete: ToF Sensors Powered Down.");
 }
+
 float getFrontDistance()
 {
-  FrontDistance = sensorFront.readRangeContinuousMillimeters() / 10.0;
-  return (FrontDistance > robotState.frontCalibrationBase) ? (FrontDistance - robotState.frontCalibrationBase) * 5.0 / robotState.frontCalibrationFactor : 0;
-  // return sensorFront.readRangeContinuousMillimeters() ;
+    // Use .read() for the VL53L1X library
+    uint16_t rawDist = sensorFront.read();
+
+    // Filter out timeouts and out-of-range values
+    if (sensorFront.timeoutOccurred() || rawDist > 8000)
+    {
+        return 0; // Return 0 so the robot doesn't freak out
+    }
+
+    FrontDistance = rawDist / 10.0;
+    return (FrontDistance > robotState.frontCalibrationBase) ? (FrontDistance - robotState.frontCalibrationBase) * 5.0 / robotState.frontCalibrationFactor : 0;
 }
 
 float getRightDistance()
 {
-  RightDistance = sensorRight.readRangeContinuousMillimeters() / 10.0;
-  return (RightDistance > robotState.rightCalibrationBase) ? (RightDistance - robotState.rightCalibrationBase) * 5.0 / robotState.rightCalibrationFactor : 0;
-  // return sensorRight.readRangeContinuousMillimeters() ;
+    uint16_t rawDist = sensorRight.read();
+    if (sensorRight.timeoutOccurred() || rawDist > 8000)
+    {
+        return 0;
+    }
+
+    RightDistance = rawDist / 10.0;
+    return (RightDistance > robotState.rightCalibrationBase) ? (RightDistance - robotState.rightCalibrationBase) * 5.0 / robotState.rightCalibrationFactor : 0;
 }
 
 float getLeftDistance()
 {
-  LeftDistance = sensorLeft.readRangeContinuousMillimeters() / 10.0;
-  return (LeftDistance > robotState.leftCalibrationBase) ? (LeftDistance - robotState.leftCalibrationBase) * 5.0 / robotState.leftCalibrationFactor : 0;
-  // return sensorLeft.readRangeContinuousMillimeters() ;
+    uint16_t rawDist = sensorLeft.read();
+    if (sensorLeft.timeoutOccurred() || rawDist > 8000)
+    {
+        return 0;
+    }
+
+    LeftDistance = rawDist / 10.0;
+    return (LeftDistance > robotState.leftCalibrationBase) ? (LeftDistance - robotState.leftCalibrationBase) * 5.0 / robotState.leftCalibrationFactor : 0;
 }

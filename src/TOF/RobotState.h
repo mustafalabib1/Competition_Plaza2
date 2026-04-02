@@ -9,7 +9,7 @@ struct RobotState
   int baseSpeed = 200;
   int rightRatio = 100;
   int leftRatio = 100;
- 
+
   // Calibration parameters
   float leftCalibrationBase = 0.0;
   float rightCalibrationBase = 0.0;

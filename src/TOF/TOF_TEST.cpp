@@ -1,22 +1,18 @@
-#include <Arduino.h>
-#include <Wire.h>
-#include <VL53L0X.h>
+#include "TOF.h"
 
-VL53L0X tofSensor;
-
-void setup() {
-  Serial.begin(9600);
-    Wire.begin(21, 22);;
-
-  if(tofSensor.init() != true){
-    Serial.println("Could not initialize ToF sensor.");
-    // Handle that error
-  }
+void setup()
+{
+    TofInit();
 }
+void loop()
+{
+    Serial.print("Front: ");
+    Serial.print(getFrontDistance());
+    Serial.print(" cm\n Right: ");
+    Serial.print(getRightDistance());
+    Serial.print(" cm\n Left: ");
+    Serial.print(getLeftDistance());
+    Serial.println(" cm\n");
 
-void loop() {
-  Serial.print(tofSensor.readRangeSingleMillimeters());
-  Serial.println(" mm");
-
-  delay(500);
+    delay(1000); // Update every second
 }
