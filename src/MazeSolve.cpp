@@ -3,9 +3,14 @@
 // --- Constants for Maze Solving ---
 // PID variables for Stabilizer Control
 double pid_error, pid_setpoint = 0.0, pid_output;
-double LeftDistance, RightDistance, FrontDistance;
 
 PID stabilizerPID(&pid_error, &pid_output, &pid_setpoint, robotState.kp, robotState.ki, robotState.kd, DIRECT);
+
+// Variables to store motor speeds
+int rightMotorSpeed = 0, leftMotorSpeed = 0;
+MazeState currentMazeState = MAZE_MOVING_FORWARD;
+
+void Swap(double &a, double &b);
 
 void solveMazeInit()
 {
@@ -34,9 +39,9 @@ void readSensors()
     RightDistance = getRightDistance();
     FrontDistance = getFrontDistance();
     if (!robotState.isLeftHandSide)
-        swap(LeftDistance, RightDistance); // If using right-hand side, swap left and right distances for logic consistency
+        Swap(LeftDistance, RightDistance); // If using right-hand side, swap left and right distances for logic consistency
 }
-void swap(double &a, double &b)
+void Swap(double &a, double &b)
 {
     double temp = a;
     a = b;

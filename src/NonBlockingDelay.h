@@ -42,4 +42,3 @@ public:
     return (elapsed >= delayTime) ? 0 : (delayTime - elapsed);
   }
 };
-

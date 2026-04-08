@@ -1,5 +1,9 @@
 #pragma once
 
+extern double FrontDistance;
+extern double RightDistance;
+extern double LeftDistance;
+
 #include "RobotState.h"
 
 void TofInit();

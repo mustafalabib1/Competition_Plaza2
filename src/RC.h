@@ -1,6 +1,7 @@
-#pragma once 
+#ifndef RC_H
+#define RC_H
 
-#include "motors/motors.h"
+#include "motors.h"
 #include "RobotState.h"
 
 void executeCommand(char command);
@@ -17,3 +18,5 @@ void executeCommand(char command);
 #define HONK 'Y'              // Honk horn
 #define HEADLIGHTS_ON 'X'     // Turn headlights ON
 #define HEADLIGHTS_OFF 'x'    // Turn headlights OFF
+
+#endif

@@ -1,14 +1,14 @@
 #pragma once
 
-#include "motors/motors.h"
+#include "motors.h"
 #include <PID_v2.h>
 #include "RobotState.h"
 #include "NonBlockingDelay.h"
-#include "TOF/TOF.h"
-#include "AngleController/AngleController.h"
+#include "TOF.h"
+#include "AngleController.h"
 
 // Variables to store motor speeds
-int rightMotorSpeed = 0, leftMotorSpeed = 0;
+extern int rightMotorSpeed, leftMotorSpeed;
 // Enum for Maze solving state machine
 enum MazeState
 {
@@ -18,7 +18,7 @@ enum MazeState
     MAZE_UTURNING
 };
 
-MazeState currentMazeState = MAZE_MOVING_FORWARD; // Start by moving forward
+extern MazeState currentMazeState;
 
 void solveMaze();
 void solveMazeInit();

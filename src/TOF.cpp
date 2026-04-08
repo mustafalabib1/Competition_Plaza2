@@ -3,7 +3,8 @@
 #include <VL53L1X.h>
 
 // XSHUT pins
-#define LEFT_XSHUT 13
+// NOTE: LEFT_XSHUT (Pin 13) is REMOVED! 
+// Physically wire the Left Sensor's XSHUT pin directly to 3.3V.
 #define FRONT_XSHUT 14
 #define RIGHT_XSHUT 27
 
@@ -17,7 +18,9 @@ VL53L1X sensorFront;
 VL53L1X sensorRight;
 
 // Distances
-float LeftDistance, RightDistance, FrontDistance;
+double FrontDistance = 0;
+double RightDistance = 0;
+double LeftDistance = 0;
 
 void TofInit()
 {
@@ -26,34 +29,42 @@ void TofInit()
 
     Serial.println("\n--- Starting ToF Boot Sequence ---");
 
-    // 1. HARDWARE SHUTDOWN (Active LOW)
-    // Pull all XSHUT pins LOW to force all sensors to sleep
-    pinMode(LEFT_XSHUT, OUTPUT);
+    // 1. HARDWARE SHUTDOWN FOR FRONT & RIGHT
+    // We only pull Front and Right LOW because Left is hardwired to stay awake
     pinMode(FRONT_XSHUT, OUTPUT);
     pinMode(RIGHT_XSHUT, OUTPUT);
-    digitalWrite(LEFT_XSHUT, LOW);
     digitalWrite(FRONT_XSHUT, LOW);
     digitalWrite(RIGHT_XSHUT, LOW);
     delay(150); // Crucial: Give capacitors time to drain completely
 
-    /* --- Activate LEFT sensor --- */
-    Serial.println("Waking up LEFT sensor...");
-    digitalWrite(LEFT_XSHUT, HIGH); // Pull HIGH to wake up
-    delay(50);                      // Give it time to boot (Datasheet says max 1.2ms, but 50ms is safe)
-
+    /* --- Activate LEFT sensor (Always Awake) --- */
+    Serial.println("Initializing hardwired LEFT sensor...");
     sensorLeft.setTimeout(500);
+    
+    // Because it never powers down, it might still be at 0x30 from a previous run!
+    // We use a "Smart Init" to check both 0x29 and 0x30.
     if (!sensorLeft.init())
     {
-        Serial.println("ERROR: Failed to initialize LEFT sensor!");
+        Serial.println("LEFT not at 0x29. Checking 0x30 (Soft Reset recovery)...");
+        sensorLeft.setAddress(0x30);
+        
+        if (!sensorLeft.init()) {
+            Serial.println("ERROR: Failed to initialize LEFT sensor entirely!");
+        } else {
+            Serial.println("LEFT sensor recovered safely at 0x30.");
+        }
     }
     else
     {
+        // It was at 0x29, so we safely move it to 0x30
         sensorLeft.setAddress(0x30);
-        sensorLeft.setDistanceMode(VL53L1X::Short);   // Configure distance mode
-        sensorLeft.setMeasurementTimingBudget(50000); // 50ms timing budget
-        sensorLeft.startContinuous(50);
-        Serial.println("LEFT sensor ready at 0x30.");
+        Serial.println("LEFT sensor moved to 0x30.");
     }
+    
+    // Configure LEFT
+    sensorLeft.setDistanceMode(VL53L1X::Short);   
+    sensorLeft.setMeasurementTimingBudget(50000); 
+    sensorLeft.startContinuous(50);
 
     /* --- Activate FRONT sensor --- */
     Serial.println("Waking up FRONT sensor...");
@@ -100,8 +111,8 @@ void PowerOffTofSensors()
     sensorFront.stopContinuous();
     sensorRight.stopContinuous();
 
-    // Pull LOW to physically force all sensors to sleep and save power
-    digitalWrite(LEFT_XSHUT, LOW);
+    // Pull LOW to physically force Front and Right to sleep
+    // (Left will stay awake, but stopped reading to save logic power)
     digitalWrite(FRONT_XSHUT, LOW);
     digitalWrite(RIGHT_XSHUT, LOW);
 
@@ -110,13 +121,11 @@ void PowerOffTofSensors()
 
 float getFrontDistance()
 {
-    // Use .read() for the VL53L1X library
     uint16_t rawDist = sensorFront.read();
 
-    // Filter out timeouts and out-of-range values
     if (sensorFront.timeoutOccurred() || rawDist > 8000)
     {
-        return 0; // Return 0 so the robot doesn't freak out
+        return 0; 
     }
 
     FrontDistance = rawDist / 10.0;
