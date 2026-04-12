@@ -59,7 +59,7 @@ void setup()
     initializeRobotState();
     MotorsInit();
     initServos();
-    TofInit();
+    // TofInit();
     initServos();
 
     PS4.begin("5c:96:56:af:ad:a0"); // Replace with your ESP32's MAC address
