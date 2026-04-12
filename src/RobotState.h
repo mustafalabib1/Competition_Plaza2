@@ -9,6 +9,8 @@ struct RobotState {
   int rightRatio = 100;
   int leftRatio = 100;
 
+  float rotationCalibration = 1.0;
+
   int uturnAngle = 180;
   // PID parameters
   float kp = 1.0;

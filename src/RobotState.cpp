@@ -10,6 +10,7 @@ void initializeRobotState()
   robotState.baseSpeed = 200;
   robotState.rightRatio = 100;
   robotState.leftRatio = 100;
+  robotState.rotationCalibration = 1.0;
   robotState.kp = 1.0;
   robotState.ki = 0.0;
   robotState.kd = 0.0;
@@ -35,6 +36,9 @@ void saveRobotStateToEEPROM()
 
   EEPROM.put(robotState.eepromAddress, robotState.leftRatio);
   robotState.eepromAddress += sizeof(robotState.leftRatio);
+
+  EEPROM.put(robotState.eepromAddress, robotState.rotationCalibration);
+  robotState.eepromAddress += sizeof(robotState.rotationCalibration);
 
   EEPROM.put(robotState.eepromAddress, robotState.kp);
   robotState.eepromAddress += sizeof(robotState.kp);
@@ -76,6 +80,10 @@ void loadRobotStateFromEEPROM()
 
   EEPROM.get(robotState.eepromAddress, robotState.leftRatio);
   robotState.eepromAddress += sizeof(robotState.leftRatio);
+
+  // Load rotation calibration
+  EEPROM.get(robotState.eepromAddress, robotState.rotationCalibration);
+  robotState.eepromAddress += sizeof(robotState.rotationCalibration);
 
   // Load PID parameters (Kp, Ki, Kd)
   EEPROM.get(robotState.eepromAddress, robotState.kp);
