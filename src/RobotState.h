@@ -9,15 +9,6 @@ struct RobotState {
   int rightRatio = 100;
   int leftRatio = 100;
 
-  // Calibration parameters
-  float leftCalibrationBase = 0.0;
-  float rightCalibrationBase = 0.0;
-  float frontCalibrationBase = 0.0;
-  float leftCalibrationFactor = 1.0;
-  float rightCalibrationFactor = 1.0;
-  float frontCalibrationFactor = 1.0;
-  float rotationCalibration = 1.0;
-
   int uturnAngle = 180;
   // PID parameters
   float kp = 1.0;

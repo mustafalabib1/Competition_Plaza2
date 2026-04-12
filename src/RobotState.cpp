@@ -10,13 +10,6 @@ void initializeRobotState()
   robotState.baseSpeed = 200;
   robotState.rightRatio = 100;
   robotState.leftRatio = 100;
-  robotState.leftCalibrationBase = 0.0;
-  robotState.rightCalibrationBase = 0.0;
-  robotState.frontCalibrationBase = 0.0;
-  robotState.leftCalibrationFactor = 1.0;
-  robotState.rightCalibrationFactor = 1.0;
-  robotState.frontCalibrationFactor = 1.0;
-  robotState.rotationCalibration = 1.0;
   robotState.kp = 1.0;
   robotState.ki = 0.0;
   robotState.kd = 0.0;
@@ -42,27 +35,6 @@ void saveRobotStateToEEPROM()
 
   EEPROM.put(robotState.eepromAddress, robotState.leftRatio);
   robotState.eepromAddress += sizeof(robotState.leftRatio);
-
-  EEPROM.put(robotState.eepromAddress, robotState.leftCalibrationBase);
-  robotState.eepromAddress += sizeof(robotState.leftCalibrationBase);
-
-  EEPROM.put(robotState.eepromAddress, robotState.rightCalibrationBase);
-  robotState.eepromAddress += sizeof(robotState.rightCalibrationBase);
-
-  EEPROM.put(robotState.eepromAddress, robotState.frontCalibrationBase);
-  robotState.eepromAddress += sizeof(robotState.frontCalibrationBase);
-
-  EEPROM.put(robotState.eepromAddress, robotState.leftCalibrationFactor);
-  robotState.eepromAddress += sizeof(robotState.leftCalibrationFactor);
-
-  EEPROM.put(robotState.eepromAddress, robotState.rightCalibrationFactor);
-  robotState.eepromAddress += sizeof(robotState.rightCalibrationFactor);
-
-  EEPROM.put(robotState.eepromAddress, robotState.frontCalibrationFactor);
-  robotState.eepromAddress += sizeof(robotState.frontCalibrationFactor);
-
-  EEPROM.put(robotState.eepromAddress, robotState.rotationCalibration);
-  robotState.eepromAddress += sizeof(robotState.rotationCalibration);
 
   EEPROM.put(robotState.eepromAddress, robotState.kp);
   robotState.eepromAddress += sizeof(robotState.kp);
@@ -104,28 +76,6 @@ void loadRobotStateFromEEPROM()
 
   EEPROM.get(robotState.eepromAddress, robotState.leftRatio);
   robotState.eepromAddress += sizeof(robotState.leftRatio);
-
-  // Load calibration parameters
-  EEPROM.get(robotState.eepromAddress, robotState.leftCalibrationBase);
-  robotState.eepromAddress += sizeof(robotState.leftCalibrationBase);
-
-  EEPROM.get(robotState.eepromAddress, robotState.rightCalibrationBase);
-  robotState.eepromAddress += sizeof(robotState.rightCalibrationBase);
-
-  EEPROM.get(robotState.eepromAddress, robotState.frontCalibrationBase);
-  robotState.eepromAddress += sizeof(robotState.frontCalibrationBase);
-
-  EEPROM.get(robotState.eepromAddress, robotState.leftCalibrationFactor);
-  robotState.eepromAddress += sizeof(robotState.leftCalibrationFactor);
-
-  EEPROM.get(robotState.eepromAddress, robotState.rightCalibrationFactor);
-  robotState.eepromAddress += sizeof(robotState.rightCalibrationFactor);
-
-  EEPROM.get(robotState.eepromAddress, robotState.frontCalibrationFactor);
-  robotState.eepromAddress += sizeof(robotState.frontCalibrationFactor);
-
-  EEPROM.get(robotState.eepromAddress, robotState.rotationCalibration);
-  robotState.eepromAddress += sizeof(robotState.rotationCalibration);
 
   // Load PID parameters (Kp, Ki, Kd)
   EEPROM.get(robotState.eepromAddress, robotState.kp);

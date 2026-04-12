@@ -3,7 +3,7 @@
 #include <VL53L1X.h>
 
 // XSHUT pins
-// NOTE: LEFT_XSHUT (Pin 13) is REMOVED! 
+// NOTE: LEFT_XSHUT (Pin 13) is REMOVED!
 // Physically wire the Left Sensor's XSHUT pin directly to 3.3V.
 #define FRONT_XSHUT 14
 #define RIGHT_XSHUT 27
@@ -40,17 +40,20 @@ void TofInit()
     /* --- Activate LEFT sensor (Always Awake) --- */
     Serial.println("Initializing hardwired LEFT sensor...");
     sensorLeft.setTimeout(500);
-    
+
     // Because it never powers down, it might still be at 0x30 from a previous run!
     // We use a "Smart Init" to check both 0x29 and 0x30.
     if (!sensorLeft.init())
     {
         Serial.println("LEFT not at 0x29. Checking 0x30 (Soft Reset recovery)...");
         sensorLeft.setAddress(0x30);
-        
-        if (!sensorLeft.init()) {
+
+        if (!sensorLeft.init())
+        {
             Serial.println("ERROR: Failed to initialize LEFT sensor entirely!");
-        } else {
+        }
+        else
+        {
             Serial.println("LEFT sensor recovered safely at 0x30.");
         }
     }
@@ -60,10 +63,10 @@ void TofInit()
         sensorLeft.setAddress(0x30);
         Serial.println("LEFT sensor moved to 0x30.");
     }
-    
+
     // Configure LEFT
-    sensorLeft.setDistanceMode(VL53L1X::Short);   
-    sensorLeft.setMeasurementTimingBudget(50000); 
+    sensorLeft.setDistanceMode(VL53L1X::Short);
+    sensorLeft.setMeasurementTimingBudget(50000);
     sensorLeft.startContinuous(50);
 
     /* --- Activate FRONT sensor --- */
@@ -122,14 +125,10 @@ void PowerOffTofSensors()
 float getFrontDistance()
 {
     uint16_t rawDist = sensorFront.read();
-
     if (sensorFront.timeoutOccurred() || rawDist > 8000)
-    {
-        return 0; 
-    }
+        return 0;
 
-    FrontDistance = rawDist / 10.0;
-    return (FrontDistance > robotState.frontCalibrationBase) ? (FrontDistance - robotState.frontCalibrationBase) * 5.0 / robotState.frontCalibrationFactor : 0;
+    return rawDist;
 }
 
 float getRightDistance()
@@ -139,9 +138,7 @@ float getRightDistance()
     {
         return 0;
     }
-
-    RightDistance = rawDist / 10.0;
-    return (RightDistance > robotState.rightCalibrationBase) ? (RightDistance - robotState.rightCalibrationBase) * 5.0 / robotState.rightCalibrationFactor : 0;
+    return rawDist;
 }
 
 float getLeftDistance()
@@ -151,7 +148,5 @@ float getLeftDistance()
     {
         return 0;
     }
-
-    LeftDistance = rawDist / 10.0;
-    return (LeftDistance > robotState.leftCalibrationBase) ? (LeftDistance - robotState.leftCalibrationBase) * 5.0 / robotState.leftCalibrationFactor : 0;
+    return rawDist;
 }

@@ -8,11 +8,11 @@
 // {
 //     Serial.print("Front: ");
 //     Serial.print(getFrontDistance());
-//     Serial.print(" cm\n Right: ");
+//     Serial.print(" mm\n Right: ");
 //     Serial.print(getRightDistance());
-//     Serial.print(" cm\n Left: ");
+//     Serial.print(" mm\n Left: ");
 //     Serial.print(getLeftDistance());
-//     Serial.println(" cm\n");
+//     Serial.println(" mm\n");
 
 //     delay(1000); // Update every second
 // }
