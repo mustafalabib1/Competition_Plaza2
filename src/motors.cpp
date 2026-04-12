@@ -15,34 +15,47 @@ void MotorsInit()
   pinMode(REAR_RIGHT_PWM, OUTPUT);
   pinMode(REAR_RIGHT_DIR, OUTPUT);
 
+  // Configure LEDC PWM channels (5 kHz, 8-bit resolution)
+  ledcSetup(CH_FRONT_LEFT, 5000, 8);
+  ledcAttachPin(FRONT_LEFT_PWM, CH_FRONT_LEFT);
+
+  ledcSetup(CH_FRONT_RIGHT, 5000, 8);
+  ledcAttachPin(FRONT_RIGHT_PWM, CH_FRONT_RIGHT);
+
+  ledcSetup(CH_REAR_LEFT, 5000, 8);
+  ledcAttachPin(REAR_LEFT_PWM, CH_REAR_LEFT);
+
+  ledcSetup(CH_REAR_RIGHT, 5000, 8);
+  ledcAttachPin(REAR_RIGHT_PWM, CH_REAR_RIGHT);
+
   // Initialize all motors to stopped state
   digitalWrite(FRONT_LEFT_DIR, LOW);
-  analogWrite(FRONT_LEFT_PWM, 0);
+  ledcWrite(CH_FRONT_LEFT, 0);
 
   digitalWrite(FRONT_RIGHT_DIR, LOW);
-  analogWrite(FRONT_RIGHT_PWM, 0);
+  ledcWrite(CH_FRONT_RIGHT, 0);
 
   digitalWrite(REAR_LEFT_DIR, LOW);
-  analogWrite(REAR_LEFT_PWM, 0);
+  ledcWrite(CH_REAR_LEFT, 0);
 
   digitalWrite(REAR_RIGHT_DIR, LOW);
-  analogWrite(REAR_RIGHT_PWM, 0);
+  ledcWrite(CH_REAR_RIGHT, 0);
 }
 
-void setMotor(int pwmPin, int dirPin, int speed)
+void setMotor(int pwmChannel, int dirPin, int speed)
 {
   // Constraints speed to the valid PWM range (-255 to 255)
   speed = constrain(speed, -255, 255);
   digitalWrite(dirPin, speed >= 0 ? HIGH : LOW);
-  analogWrite(pwmPin, speed >= 0 ? 255 - speed : -speed);
+  ledcWrite(pwmChannel, speed >= 0 ? 255 - speed : -speed);
 }
 
 void moveCar(int leftSpeed, int rightSpeed)
 {
-  setMotor(FRONT_LEFT_PWM, FRONT_LEFT_DIR, leftSpeed);
-  setMotor(REAR_LEFT_PWM, REAR_LEFT_DIR, leftSpeed);
-  setMotor(FRONT_RIGHT_PWM, FRONT_RIGHT_DIR, rightSpeed);
-  setMotor(REAR_RIGHT_PWM, REAR_RIGHT_DIR, rightSpeed);
+  setMotor(CH_FRONT_LEFT, FRONT_LEFT_DIR, leftSpeed);
+  setMotor(CH_REAR_LEFT, REAR_LEFT_DIR, leftSpeed);
+  setMotor(CH_FRONT_RIGHT, FRONT_RIGHT_DIR, rightSpeed);
+  setMotor(CH_REAR_RIGHT, REAR_RIGHT_DIR, rightSpeed);
 }
 // Main function to drive the mecanum robot
 // Inputs should be between -255 and 255
@@ -70,8 +83,8 @@ void driveMecanum(int x, int y, int rotation)
   }
 
   // Send the calculated speeds to the motors using our helper function
-  setMotor(FRONT_LEFT_PWM, FRONT_LEFT_DIR, frontLeftSpeed);
-  setMotor(FRONT_RIGHT_PWM, FRONT_RIGHT_DIR, frontRightSpeed);
-  setMotor(REAR_LEFT_PWM, REAR_LEFT_DIR, rearLeftSpeed);
-  setMotor(REAR_RIGHT_PWM, REAR_RIGHT_DIR, rearRightSpeed);
+  setMotor(CH_FRONT_LEFT, FRONT_LEFT_DIR, frontLeftSpeed);
+  setMotor(CH_FRONT_RIGHT, FRONT_RIGHT_DIR, frontRightSpeed);
+  setMotor(CH_REAR_LEFT, REAR_LEFT_DIR, rearLeftSpeed);
+  setMotor(CH_REAR_RIGHT, REAR_RIGHT_DIR, rearRightSpeed);
 }
