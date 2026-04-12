@@ -16,16 +16,16 @@ void MotorsInit()
   pinMode(REAR_RIGHT_DIR, OUTPUT);
 
   // Configure LEDC PWM channels (5 kHz, 8-bit resolution)
-  ledcSetup(CH_FRONT_LEFT, 5000, 8);
+  ledcSetup(CH_FRONT_LEFT, 1000, 8);
   ledcAttachPin(FRONT_LEFT_PWM, CH_FRONT_LEFT);
 
-  ledcSetup(CH_FRONT_RIGHT, 5000, 8);
+  ledcSetup(CH_FRONT_RIGHT, 1000, 8);
   ledcAttachPin(FRONT_RIGHT_PWM, CH_FRONT_RIGHT);
 
-  ledcSetup(CH_REAR_LEFT, 5000, 8);
+  ledcSetup(CH_REAR_LEFT, 1000, 8);
   ledcAttachPin(REAR_LEFT_PWM, CH_REAR_LEFT);
 
-  ledcSetup(CH_REAR_RIGHT, 5000, 8);
+  ledcSetup(CH_REAR_RIGHT, 1000, 8);
   ledcAttachPin(REAR_RIGHT_PWM, CH_REAR_RIGHT);
 
   // Initialize all motors to stopped state
