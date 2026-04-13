@@ -6,13 +6,14 @@
 #include "RC.h"
 #include "TOF.h"
 #include "ESP32Servo.h"
+#include "MazeSolve.h"
 
 /* --- SERVO MOTORS --- */
 #define SHOULDER_SERVO 13
 #define ELBOW_SERVO 23
 #define GRIPPER1_SERVO 32
 #define GRIPPER2_SERVO 18
-#define WRIST_SERVO 25 // 2
+#define WRIST_SERVO 25
 
 Servo Shoulder, Elbow, Gripper1, Gripper2, Wrist;
 
@@ -21,7 +22,7 @@ int shoulderAngle = 90; // Start at a neutral position
 int elbowAngle = 90;
 int gripper1Angle = 90;
 int gripper2Angle = 90;
-int wristAngle = 0;
+int wristAngle = 135;
 
 // --- Constants for Control ---
 // Driving
@@ -30,7 +31,7 @@ const float ROTATION_DEADZONE = 0.4f; // 40% deadzone for rotation
 const int MAX_MOTOR_SPEED = 255;
 
 // Robot Arm
-const int ARM_ANGLE_STEP = 10;
+const int ARM_ANGLE_STEP = 1;
 const int ARM_MIN_ANGLE = 0;
 const int ARM_MAX_ANGLE = 180;
 
@@ -39,12 +40,16 @@ const int GRIPPER_OPEN_ANGLE = 90;
 const int GRIPPER_CLOSED_ANGLE = 0;
 
 // Gripper 2 (Continuous Rotation Servo)
-const int GRIPPER_CONTINUOUS_FORWARD = 135; // Spin forward
-const int GRIPPER_CONTINUOUS_BACKWARD = 45; // Spin backward
+const int GRIPPER_CONTINUOUS_FORWARD = 180; // Spin forward
+const int GRIPPER_CONTINUOUS_BACKWARD = 0;  // Spin backward
 const int GRIPPER_CONTINUOUS_STOP = 90;     // Stop spinning
 
 // --- Global Variables ---
 bool isAutonomousMode = false; // Start in teleop mode
+
+unsigned long WristDelay = millis();
+unsigned long shoulderDelay = millis();
+unsigned long elbowDelay = millis();
 
 // --- Function Prototypes ---
 void handleModeSwitching();
@@ -59,8 +64,9 @@ void setup()
   initializeRobotState();
   MotorsInit();
   initServos();
-  // TofInit();
+  TofInit();
   initServos();
+  solveMazeInit();
 
   PS4.begin("00:4b:12:3c:5a:82"); // Replace with your ESP32's MAC address
   Serial.println("Waiting for PS4 controller to connect...");
@@ -75,6 +81,7 @@ void loop()
     if (isAutonomousMode)
     {
       // Autonomous mode logic here (not implemented in this example)
+      solveMaze();
     }
     else
     {
@@ -136,15 +143,30 @@ void handleRobotArmControl()
 {
   // --- Shoulder Control ---
   if (PS4.Up())
-    shoulderAngle += ARM_ANGLE_STEP;
+    if (millis() - shoulderDelay >= 3)
+    {
+      shoulderAngle += ARM_ANGLE_STEP;
+      shoulderDelay = millis();
+    }
   if (PS4.Down())
-    shoulderAngle -= ARM_ANGLE_STEP;
-
+    if (millis() - shoulderDelay >= 3)
+    {
+      shoulderAngle -= ARM_ANGLE_STEP;
+      shoulderDelay = millis();
+    }
   // --- Elbow Control ---
   if (PS4.Triangle())
-    elbowAngle += ARM_ANGLE_STEP;
+    if (millis() - elbowDelay >= 3)
+    {
+      elbowAngle += ARM_ANGLE_STEP;
+      elbowDelay = millis();
+    }
   if (PS4.Cross())
-    elbowAngle -= ARM_ANGLE_STEP;
+    if (millis() - elbowDelay >= 3)
+    {
+      elbowAngle -= ARM_ANGLE_STEP;
+      elbowDelay = millis();
+    }
 
   // --- Gripper 1 (Standard Servo) ---
   if (PS4.Right())
@@ -154,9 +176,17 @@ void handleRobotArmControl()
 
   // --- Wrist Control ---
   if (PS4.R1())
-    wristAngle += ARM_ANGLE_STEP;
+    if (millis() - WristDelay >= 3)
+    {
+      wristAngle += ARM_ANGLE_STEP;
+      WristDelay = millis();
+    }
   if (PS4.L1())
-    wristAngle -= ARM_ANGLE_STEP;
+    if (millis() - WristDelay >= 3)
+    {
+      wristAngle -= ARM_ANGLE_STEP;
+      WristDelay = millis();
+    }
 
   // --- Gripper 2 (Continuous Rotation Servo) ---
   if (PS4.R2())
@@ -169,16 +199,16 @@ void handleRobotArmControl()
   // Constrain all angles to prevent servo damage
   shoulderAngle = constrain(shoulderAngle, ARM_MIN_ANGLE, ARM_MAX_ANGLE);
   elbowAngle = constrain(elbowAngle, ARM_MIN_ANGLE, ARM_MAX_ANGLE);
-  wristAngle = constrain(wristAngle, ARM_MIN_ANGLE, ARM_MAX_ANGLE);
+  wristAngle = constrain(wristAngle, 0, 150);
   // gripper1Angle is set to specific values, but constraining is good practice
   gripper1Angle = constrain(gripper1Angle, GRIPPER_CLOSED_ANGLE, GRIPPER_OPEN_ANGLE);
-
   // Write angles to servos
   Shoulder.write(shoulderAngle);
   Elbow.write(elbowAngle);
   Gripper1.write(gripper1Angle);
   Gripper2.write(gripper2Angle);
   Wrist.write(wristAngle);
+  Serial.println("wristAngle is " + String(wristAngle));
 }
 
 void initServos()
