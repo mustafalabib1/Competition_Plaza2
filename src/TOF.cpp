@@ -25,8 +25,12 @@ double LeftDistance = 0;
 void TofInit()
 {
     Serial.begin(115200);
+    // 1. Initialize the I2C bus
     Wire.begin(SDA_PIN, SCL_PIN);
 
+    // 2. Set the speed to 400kHz (Fast Mode)
+    Wire.setClock(400000);
+    
     Serial.println("\n--- Starting ToF Boot Sequence ---");
 
     // 1. HARDWARE SHUTDOWN FOR FRONT & RIGHT
