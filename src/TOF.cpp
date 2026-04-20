@@ -22,6 +22,55 @@ double FrontDistance = 0;
 double RightDistance = 0;
 double LeftDistance = 0;
 
+// Helper function to initialize a sensor and handle Soft Reset recovery
+bool initTofSensor(VL53L1X &sensor, uint8_t targetAddress, const char *name)
+{
+    sensor.setTimeout(500);
+
+    // 1. Try to initialize at default address (0x29)
+    if (!sensor.init())
+    {
+        Serial.print(name);
+        Serial.print(" not at 0x29. Checking 0x");
+        Serial.print(targetAddress, HEX);
+        Serial.println(" (Soft Reset recovery)...");
+
+        // Update the sensor's internal address object to the target
+        // (Even if writing to 0x29 fails, it updates internal address to targetAddress)
+        sensor.setAddress(targetAddress);
+
+        // 2. Try to initialize at the new target address
+        if (!sensor.init())
+        {
+            Serial.print("ERROR: Failed to initialize ");
+            Serial.print(name);
+            Serial.println(" sensor entirely!");
+            return false;
+        }
+        else
+        {
+            Serial.print(name);
+            Serial.print(" sensor recovered safely at 0x");
+            Serial.println(targetAddress, HEX);
+        }
+    }
+    else
+    {
+        // 3. Sensor responded at 0x29, so safely move it to the target address
+        sensor.setAddress(targetAddress);
+        Serial.print(name);
+        Serial.print(" sensor moved to 0x");
+        Serial.println(targetAddress, HEX);
+    }
+
+    // Configure the sensor
+    sensor.setDistanceMode(VL53L1X::Short);
+    sensor.setMeasurementTimingBudget(50000);
+    sensor.startContinuous(50);
+
+    return true;
+}
+
 void TofInit()
 {
     Serial.begin(115200);
@@ -30,7 +79,7 @@ void TofInit()
 
     // 2. Set the speed to 400kHz (Fast Mode)
     Wire.setClock(400000);
-    
+
     Serial.println("\n--- Starting ToF Boot Sequence ---");
 
     // 1. HARDWARE SHUTDOWN FOR FRONT & RIGHT
@@ -43,73 +92,21 @@ void TofInit()
 
     /* --- Activate LEFT sensor (Always Awake) --- */
     Serial.println("Initializing hardwired LEFT sensor...");
-    sensorLeft.setTimeout(500);
-
-    // Because it never powers down, it might still be at 0x30 from a previous run!
-    // We use a "Smart Init" to check both 0x29 and 0x30.
-    if (!sensorLeft.init())
-    {
-        Serial.println("LEFT not at 0x29. Checking 0x30 (Soft Reset recovery)...");
-        sensorLeft.setAddress(0x30);
-
-        if (!sensorLeft.init())
-        {
-            Serial.println("ERROR: Failed to initialize LEFT sensor entirely!");
-        }
-        else
-        {
-            Serial.println("LEFT sensor recovered safely at 0x30.");
-        }
-    }
-    else
-    {
-        // It was at 0x29, so we safely move it to 0x30
-        sensorLeft.setAddress(0x30);
-        Serial.println("LEFT sensor moved to 0x30.");
-    }
-
-    // Configure LEFT
-    sensorLeft.setDistanceMode(VL53L1X::Short);
-    sensorLeft.setMeasurementTimingBudget(50000);
-    sensorLeft.startContinuous(50);
+    initTofSensor(sensorLeft, 0x30, "LEFT");
 
     /* --- Activate FRONT sensor --- */
     Serial.println("Waking up FRONT sensor...");
     digitalWrite(FRONT_XSHUT, HIGH);
     delay(50);
-
-    sensorFront.setTimeout(500);
-    if (!sensorFront.init())
-    {
-        Serial.println("ERROR: Failed to initialize FRONT sensor!");
-    }
-    else
-    {
-        sensorFront.setAddress(0x31);
-        sensorFront.setDistanceMode(VL53L1X::Short);
-        sensorFront.setMeasurementTimingBudget(50000);
-        sensorFront.startContinuous(50);
-        Serial.println("FRONT sensor ready at 0x31.");
-    }
+    initTofSensor(sensorFront, 0x31, "FRONT");
 
     /* --- Activate RIGHT sensor --- */
     Serial.println("Waking up RIGHT sensor...");
     digitalWrite(RIGHT_XSHUT, HIGH);
     delay(50);
+    initTofSensor(sensorRight, 0x32, "RIGHT");
 
-    sensorRight.setTimeout(500);
-    if (!sensorRight.init())
-    {
-        Serial.println("ERROR: Failed to initialize RIGHT sensor!");
-    }
-    else
-    {
-        sensorRight.setAddress(0x32);
-        sensorRight.setDistanceMode(VL53L1X::Short);
-        sensorRight.setMeasurementTimingBudget(50000);
-        sensorRight.startContinuous(50);
-        Serial.println("RIGHT sensor ready at 0x32.");
-    }
+    Serial.println("\n--- ToF Boot Sequence Complete ---");
 }
 
 void PowerOffTofSensors()
