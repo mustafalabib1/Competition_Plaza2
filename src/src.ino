@@ -9,16 +9,12 @@
 #include "MazeSolve.h"
 
 bool isOg = false;
-<<<<<<< HEAD
 bool isMazeSolving = false;
-=======
->>>>>>> 2dad667cee82f4ca5fb5510615c95aee70abf90b
 // Bluetooth communication object
 BluetoothSerial SerialBT;
 
 void printHelp(); // Forward declaration
 
-<<<<<<< HEAD
 void setup()
 {
     // Initialize serial communication for debugging
@@ -30,17 +26,6 @@ void setup()
     // Initialize Bluetooth communication
     SerialBT.begin("ESP32test");
     Serial.println("The device started, now you can pair it with bluetooth!");
-=======
-void setup() {
-  // Initialize serial communication for debugging
-  Serial.begin(115200);
-  initializeRobotState();
-  MotorsInit();
-  TofInit();
-  // Initialize Bluetooth communication
-  SerialBT.begin("ESP32test");
-  Serial.println("The device started, now you can pair it with bluetooth!");
->>>>>>> 2dad667cee82f4ca5fb5510615c95aee70abf90b
 
     while (!SerialBT.available())
     {
@@ -218,6 +203,8 @@ void loop()
         else if (command == "uturn")
         {
             UTurn();
+            while (!isRotationComplete())
+                ;
             moveCar(0, 0);
         }
         else if (command == "go")
@@ -229,7 +216,6 @@ void loop()
             isOg = false;
             moveCar(0, 0);
         }
-<<<<<<< HEAD
 
         else if (command == "readings" || command == "sensors" || command == "r" || command == "R")
         {
@@ -325,131 +311,4 @@ void printHelp()
     SerialBT.println("  stopmaze             - Stop maze solving");
     SerialBT.println("  go                   - Start moving with current settings");
     SerialBT.println("  stop                 - Stop all movement");
-=======
-        delay(10);  // Prevent tight loop from starving the watchdog
-      }
-      SerialBT.println("Exited Stabilizer Test mode.");
-    } else if (command == "maze") {
-      SerialBT.println("Solving Maze...");
-      solveMazeInit();
-      while (SerialBT.readStringUntil('\n') != "stopmaze") {
-        solveMaze();
-      }
-      solveMazeInit();
-      while (SerialBT.readStringUntil('\n') != "stopmaze") {
-        solveMaze();
-      }
-    } else if (command == "right") {
-      rotateDegrees(-90);
-      while (!isRotationComplete())
-        ;
-      moveCar(0, 0);
-      rotateDegrees(-90);
-      while (!isRotationComplete())
-        ;
-      moveCar(0, 0);
-    } else if (command == "left") {
-      rotateDegrees(90);
-      while (!isRotationComplete())
-        ;
-      moveCar(0, 0);
-      rotateDegrees(90);
-      while (!isRotationComplete())
-        ;
-      moveCar(0, 0);
-    } else if (command == "uturn") {
-      UTurn();
-      while (!isRotationComplete())
-        ;
-      moveCar(0, 0);
-    } else if (command == "go") {
-      while (1) {
-      while (1) {
-        stablilizerControl();
-        moveCar(rightMotorSpeed, leftMotorSpeed);
-      }
-    } else if (command == "stop") {
-
-    } else if (command == "readings" || command == "sensors" || command == "r" || command == "R") {
-    } else if (command == "readings" || command == "sensors" || command == "r" || command == "R") {
-      SerialBT.println("=== Sensor Readings ===");
-      SerialBT.println("Front Distance: " + String(getFrontDistance()));
-      SerialBT.println("Right Distance: " + String(getRightDistance()));
-      SerialBT.println("Left Distance: " + String(getLeftDistance()));
-      SerialBT.println("Front Distance: " + String(getFrontDistance()));
-      SerialBT.println("Right Distance: " + String(getRightDistance()));
-      SerialBT.println("Left Distance: " + String(getLeftDistance()));
-    } else if (command == "u") {
-      // Display current sensor readings and PID parameters
-      SerialBT.println("=== Sensor Readings ===");
-      SerialBT.println("Front Distance: " + String(getFrontDistance()));
-      SerialBT.println("Right Distance: " + String(getRightDistance()));
-      SerialBT.println("Left Distance: " + String(getLeftDistance()));
-      SerialBT.println("Front Distance: " + String(getFrontDistance()));
-      SerialBT.println("Right Distance: " + String(getRightDistance()));
-      SerialBT.println("Left Distance: " + String(getLeftDistance()));
-      SerialBT.println();
-      SerialBT.println("=== PID Parameters ===");
-      SerialBT.printf("Kp: %.2f\n", robotState.kp);
-      SerialBT.printf("Ki: %.2f\n", robotState.ki);
-      SerialBT.printf("Kd: %.2f\n", robotState.kd);
-      SerialBT.println();
-      SerialBT.println("=== Motor Speeds ===");
-      SerialBT.printf("Base Speed: %d\n", robotState.baseSpeed);
-      SerialBT.printf("Left Ratio: %d\n", robotState.leftRatio);
-      SerialBT.printf("Right Ratio: %d\n", robotState.rightRatio);
-    } else if (command.startsWith("resetpid")) {
-      // Reset PID parameters to default values
-      robotState.kp = 1.0;
-      robotState.ki = 0.0;
-      robotState.kd = 0.0;
-      SerialBT.println("PID parameters reset to defaults:");
-      SerialBT.printf("Kp: %.2f\n", robotState.kp);
-      SerialBT.printf("Ki: %.2f\n", robotState.ki);
-      SerialBT.printf("Kd: %.2f\n", robotState.kd);
-    }
-  }
-}
-
-void printHelp() {
-  SerialBT.println("=== Available Commands ===");
-  SerialBT.println();
-  SerialBT.println("Motor Control:");
-  SerialBT.printf("  basespeed <value>    - Set the base speed (current: %d)\n", robotState.baseSpeed);
-  SerialBT.printf("  rightratio <value>   - Set the right ratio (current: %d)\n", robotState.rightRatio);
-  SerialBT.printf("  leftratio <value>    - Set the left ratio (current: %d)\n", robotState.leftRatio);
-  SerialBT.println();
-  SerialBT.println("Sensor Calibration:");
-  SerialBT.println();
-  SerialBT.println("PID Control:");
-  SerialBT.printf("  kp <value>           - Set Kp for PID (current: %.2f)\n", robotState.kp);
-  SerialBT.printf("  kd <value>           - Set Kd for PID (current: %.2f)\n", robotState.kd);
-  SerialBT.printf("  ki <value>           - Set Ki for PID (current: %.2f)\n", robotState.ki);
-  SerialBT.println();
-  SerialBT.println("Navigation:");
-  SerialBT.printf("  rotc <value>         - Set Rotation Calibration (current: %.2f)\n", robotState.rotationCalibration);
-  SerialBT.printf("  uturnangle <value>   - Set U-Turn Angle (current: %d)\n", robotState.uturnAngle);
-  SerialBT.println();
-  SerialBT.println("Testing Commands:");
-  SerialBT.println("  right                - Rotate right 90 degrees");
-  SerialBT.println("  left                 - Rotate left 90 degrees");
-  SerialBT.println("  uturn                - Perform U-Turn");
-  SerialBT.println("  u                    - Display current sensor readings and PID parameters");
-  SerialBT.println();
-  SerialBT.println("System Commands:");
-  SerialBT.println("  save                 - Save settings to EEPROM");
-  SerialBT.println("  rc                   - Enter RC mode");
-  SerialBT.println("  stab                 - Enter Stabilizer Test mode");
-  SerialBT.println("  resetpid             - Reset PID parameters to defaults");
-  SerialBT.println(" islefthand <true/false> - Set maze solving side (current: " + String(robotState.isLeftHandSide ? "Left" : "Right") + ")");
-  SerialBT.println(" ft <value>            - Set Front Distance Threshold (current: " + String(robotState.frontThreshold) + ")");
-  SerialBT.println(" rt <value>            - Set Right Distance Threshold (current: " + String(robotState.rightThreshold) + ")");
-  SerialBT.println(" lt <value>            - Set Left Distance Threshold (current: " + String(robotState.leftThreshold) + ")");
-  SerialBT.println(" shoulder <angle>      - Set Shoulder servo angle (0-180)");
-  SerialBT.println(" elbow <angle>         - Set Elbow servo angle (0-180)");
-  SerialBT.println(" gripper1 <angle>      - Set Gripper1 servo angle (0-180)");
-  SerialBT.println(" gripper2 <angle>      - Set Gripper2 servo speed (0-180, 90=stop)");
-  SerialBT.println(" wrist <angle>         - Set Wrist servo angle (0-180)");
-  SerialBT.println("  help                 - Print this help message");
->>>>>>> 2dad667cee82f4ca5fb5510615c95aee70abf90b
 }
