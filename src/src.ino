@@ -8,9 +8,7 @@
 #include "ESP32Servo.h"
 #include "MazeSolve.h"
 
-bool isGo = false;
-bool isMazeSolving = false;
-unsigned long pretime = millis();
+bool isOg = false;
 // Bluetooth communication object
 BluetoothSerial SerialBT;
 
@@ -22,7 +20,6 @@ void setup() {
   initializeRobotState();
   MotorsInit();
   TofInit();
-  solveMazeInit();
   // Initialize Bluetooth communication
   SerialBT.begin("ESP32test");
   Serial.println("The device started, now you can pair it with bluetooth!");
@@ -138,55 +135,43 @@ void loop() {
       SerialBT.println("Exited Stabilizer Test mode.");
     } else if (command == "maze") {
       SerialBT.println("Solving Maze...");
-      isMazeSolving = true;
-    } else if (command == "stopmaze") {
-      SerialBT.println("Stopped Maze Solving.");
-      isMazeSolving = false;
+      solveMazeInit();
+      while (SerialBT.readStringUntil('\n') != "stopmaze") {
+        solveMaze();
+      }
     } else if (command == "right") {
-      Right90();
-
+      rotateDegrees(-90);
+      while (!isRotationComplete())
+        ;
+      moveCar(0, 0);
     } else if (command == "left") {
-      Left90();
+      rotateDegrees(90);
+      while (!isRotationComplete())
+        ;
+      moveCar(0, 0);
     } else if (command == "uturn") {
       UTurn();
       while (!isRotationComplete())
         ;
       moveCar(0, 0);
     } else if (command == "go") {
-      unsigned long pre = millis();
-      while (millis() - pre < 1500) {
-        readSensors();
+      while (1) {
         stablilizerControl();
         moveCar(rightMotorSpeed, leftMotorSpeed);
-        if (millis() - pretime >= 200) {
-          SerialBT.printf("Right Motor Speed: %d, Left Motor Speed: %d\n", rightMotorSpeed, leftMotorSpeed);
-          pretime = millis();
-        }
       }
-      // STOP the motors after the loop finishes
-      moveCar(0, 0);
     } else if (command == "stop") {
-      isGo = false;
-      moveCar(0, 0);
-    }
 
-    else if (command == "readings" || command == "sensors" || command == "r" || command == "R") {
+    } else if (command == "readings" || command == "sensors" || command == "r" || command == "R") {
       SerialBT.println("=== Sensor Readings ===");
-      readSensors();
-      stablilizerControl();
-      SerialBT.println("Front Distance: " + String(FrontDistance));
-      SerialBT.println("Right Distance: " + String(RightDistance));
-      SerialBT.println("Left Distance: " + String(LeftDistance));
-      SerialBT.println("pid error: " + String(pid_error));
+      SerialBT.println("Front Distance: " + String(getFrontDistance()));
+      SerialBT.println("Right Distance: " + String(getRightDistance()));
+      SerialBT.println("Left Distance: " + String(getLeftDistance()));
     } else if (command == "u") {
       // Display current sensor readings and PID parameters
       SerialBT.println("=== Sensor Readings ===");
-      readSensors();
-      stablilizerControl();
-      SerialBT.println("Front Distance: " + String(FrontDistance));
-      SerialBT.println("Right Distance: " + String(RightDistance));
-      SerialBT.println("Left Distance: " + String(LeftDistance));
-      SerialBT.println("pid error: " + String(pid_error));
+      SerialBT.println("Front Distance: " + String(getFrontDistance()));
+      SerialBT.println("Right Distance: " + String(getRightDistance()));
+      SerialBT.println("Left Distance: " + String(getLeftDistance()));
       SerialBT.println();
       SerialBT.println("=== PID Parameters ===");
       SerialBT.printf("Kp: %.2f\n", robotState.kp);
@@ -207,9 +192,6 @@ void loop() {
       SerialBT.printf("Ki: %.2f\n", robotState.ki);
       SerialBT.printf("Kd: %.2f\n", robotState.kd);
     }
-  }
-  if (isMazeSolving) {
-    solveMaze();
   }
 }
 
@@ -253,8 +235,4 @@ void printHelp() {
   SerialBT.println(" gripper2 <angle>      - Set Gripper2 servo speed (0-180, 90=stop)");
   SerialBT.println(" wrist <angle>         - Set Wrist servo angle (0-180)");
   SerialBT.println("  help                 - Print this help message");
-  SerialBT.println("  maze                 - Start maze solving");
-  SerialBT.println("  stopmaze             - Stop maze solving");
-  SerialBT.println("  go                   - Start moving with current settings");
-  SerialBT.println("  stop                 - Stop all movement");
 }

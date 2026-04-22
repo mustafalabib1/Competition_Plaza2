@@ -74,12 +74,14 @@ bool initTofSensor(VL53L1X &sensor, uint8_t targetAddress, const char *name)
 void TofInit()
 {
     Serial.begin(115200);
-    // 1. Initialize the I2C bus
     Wire.begin(SDA_PIN, SCL_PIN);
 
+<<<<<<< HEAD
     // 2. Set the speed to 400kHz (Fast Mode)
     Wire.setClock(400000);
 
+=======
+>>>>>>> parent of 2103939 (Refactor maze solving logic and improve sensor reading handling)
     Serial.println("\n--- Starting ToF Boot Sequence ---");
 
     // 1. HARDWARE SHUTDOWN FOR FRONT & RIGHT

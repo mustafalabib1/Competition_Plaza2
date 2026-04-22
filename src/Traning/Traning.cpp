@@ -5,11 +5,8 @@
 #include "AngleController.h"
 #include "RC.h"
 #include "TOF.h"
-#include "ESP32Servo.h"
+#include "Servo.h"
 #include "MazeSolve.h"
-
-bool isOg = false;
-bool isMazeSolving = false;
 // Bluetooth communication object
 BluetoothSerial SerialBT;
 
@@ -21,8 +18,7 @@ void setup()
     Serial.begin(115200);
     initializeRobotState();
     MotorsInit();
-    TofInit();
-    solveMazeInit();
+
     // Initialize Bluetooth communication
     SerialBT.begin("ESP32test");
     Serial.println("The device started, now you can pair it with bluetooth!");
@@ -39,6 +35,12 @@ void setup()
     SerialBT.printf("baseSpeed: %d\n", robotState.baseSpeed);
     SerialBT.printf("rightRatio: %d\n", robotState.rightRatio);
     SerialBT.printf("leftRatio: %d\n", robotState.leftRatio);
+    SerialBT.printf("LeftCalibrationBase: %.2f\n", robotState.leftCalibrationBase);
+    SerialBT.printf("RightCalibrationBase: %.2f\n", robotState.rightCalibrationBase);
+    SerialBT.printf("FrontCalibrationBase: %.2f\n", robotState.frontCalibrationBase);
+    SerialBT.printf("LeftCalibrationFactor: %.2f\n", robotState.leftCalibrationFactor);
+    SerialBT.printf("RightCalibrationFactor: %.2f\n", robotState.rightCalibrationFactor);
+    SerialBT.printf("FrontCalibrationFactor: %.2f\n", robotState.frontCalibrationFactor);
     SerialBT.printf("ROTATION_CALIBRATION: %.2f\n", robotState.rotationCalibration);
     SerialBT.printf("Kp: %.2f\n", robotState.kp);
     SerialBT.printf("Kd: %.2f\n", robotState.kd);
@@ -78,6 +80,36 @@ void loop()
             int newRatio = command.substring(9).toInt();
             robotState.leftRatio = newRatio;
             SerialBT.printf("leftRatio: %d\n", robotState.leftRatio);
+        }
+        else if (command.startsWith("lcb"))
+        {
+            robotState.leftCalibrationBase = command.substring(3).toFloat();
+            SerialBT.printf("LeftCalibrationBase: %.2f\n", robotState.leftCalibrationBase);
+        }
+        else if (command.startsWith("rcb"))
+        {
+            robotState.rightCalibrationBase = command.substring(3).toFloat();
+            SerialBT.printf("RightCalibrationBase: %.2f\n", robotState.rightCalibrationBase);
+        }
+        else if (command.startsWith("fcb"))
+        {
+            robotState.frontCalibrationBase = command.substring(3).toFloat();
+            SerialBT.printf("FrontCalibrationBase: %.2f\n", robotState.frontCalibrationBase);
+        }
+        else if (command.startsWith("lcf"))
+        {
+            robotState.leftCalibrationFactor = command.substring(3).toFloat();
+            SerialBT.printf("LeftCalibrationFactor: %.2f\n", robotState.leftCalibrationFactor);
+        }
+        else if (command.startsWith("rcf"))
+        {
+            robotState.rightCalibrationFactor = command.substring(3).toFloat();
+            SerialBT.printf("RightCalibrationFactor: %.2f\n", robotState.rightCalibrationFactor);
+        }
+        else if (command.startsWith("fcf"))
+        {
+            robotState.frontCalibrationFactor = command.substring(3).toFloat();
+            SerialBT.printf("FrontCalibrationFactor: %.2f\n", robotState.frontCalibrationFactor);
         }
         else if (command.startsWith("rotc"))
         {
@@ -146,6 +178,41 @@ void loop()
             saveRobotStateToEEPROM();
             SerialBT.println("Saved");
         }
+        else if (command.startsWith("Shoulder"))
+        {
+            int angle = command.substring(8).toInt();
+            shoulderAngle = angle;
+            Shoulder.write(shoulderAngle);
+            SerialBT.printf("Shoulder Angle: %d\n", shoulderAngle);
+        }
+        else if (command.startsWith("Elbow"))
+        {
+            int angle = command.substring(5).toInt();
+            elbowAngle = angle;
+            Elbow.write(elbowAngle);
+            SerialBT.printf("Elbow Angle: %d\n", elbowAngle);
+        }
+        else if (command.startsWith("Gripper1"))
+        {
+            int angle = command.substring(8).toInt();
+            gripper1Angle = angle;
+            Gripper1.write(gripper1Angle);
+            SerialBT.printf("Gripper1 Angle: %d\n", gripper1Angle);
+        }
+        else if (command.startsWith("Gripper2"))
+        {
+            int angle = command.substring(8).toInt();
+            gripper2Angle = angle;
+            Gripper2.write(gripper2Angle);
+            SerialBT.printf("Gripper2 Angle: %d\n", gripper2Angle);
+        }
+        else if (command.startsWith("Wrist"))
+        {
+            int angle = command.substring(5).toInt();
+            wristAngle = angle;
+            Wrist.write(wristAngle);
+            SerialBT.printf("Wrist Angle: %d\n", wristAngle);
+        }
         else if (command.startsWith("help"))
         {
             printHelp();
@@ -183,12 +250,11 @@ void loop()
         else if (command == "maze")
         {
             SerialBT.println("Solving Maze...");
-            isMazeSolving = true;
-        }
-        else if (command == "stopmaze")
-        {
-            SerialBT.println("Stopped Maze Solving.");
-            isMazeSolving = false;
+            solveMazeInit();
+            while (SerialBT.readStringUntil('\n') != "stopmaze")
+            {
+                solveMaze();
+            }
         }
         else if (command == "right")
         {
@@ -211,16 +277,6 @@ void loop()
                 ;
             moveCar(0, 0);
         }
-        else if (command == "go")
-        {
-            isOg = true;
-        }
-        else if (command == "stop")
-        {
-            isOg = false;
-            moveCar(0, 0);
-        }
-
         else if (command == "readings" || command == "sensors" || command == "r" || command == "R")
         {
             SerialBT.println("=== Sensor Readings ===");
@@ -257,16 +313,7 @@ void loop()
             SerialBT.printf("Ki: %.2f\n", robotState.ki);
             SerialBT.printf("Kd: %.2f\n", robotState.kd);
         }
-    }
-    if (isOg)
-    {
-        stablilizerControl();
-        moveCar(rightMotorSpeed, leftMotorSpeed);
-        SerialBT.printf("Right Motor Speed: %d, Left Motor Speed: %d\n", rightMotorSpeed, leftMotorSpeed);
-    }
-    if (isMazeSolving)
-    {
-        solveMaze();
+        
     }
 }
 
@@ -280,6 +327,12 @@ void printHelp()
     SerialBT.printf("  leftratio <value>    - Set the left ratio (current: %d)\n", robotState.leftRatio);
     SerialBT.println();
     SerialBT.println("Sensor Calibration:");
+    SerialBT.printf("  lcb <value>          - Set Left Calibration Base (current: %.2f)\n", robotState.leftCalibrationBase);
+    SerialBT.printf("  rcb <value>          - Set Right Calibration Base (current: %.2f)\n", robotState.rightCalibrationBase);
+    SerialBT.printf("  fcb <value>          - Set Front Calibration Base (current: %.2f)\n", robotState.frontCalibrationBase);
+    SerialBT.printf("  lcf <value>          - Set Left Calibration Factor (current: %.2f)\n", robotState.leftCalibrationFactor);
+    SerialBT.printf("  rcf <value>          - Set Right Calibration Factor (current: %.2f)\n", robotState.rightCalibrationFactor);
+    SerialBT.printf("  fcf <value>          - Set Front Calibration Factor (current: %.2f)\n", robotState.frontCalibrationFactor);
     SerialBT.println();
     SerialBT.println("PID Control:");
     SerialBT.printf("  kp <value>           - Set Kp for PID (current: %.2f)\n", robotState.kp);
@@ -311,8 +364,4 @@ void printHelp()
     SerialBT.println(" gripper2 <angle>      - Set Gripper2 servo speed (0-180, 90=stop)");
     SerialBT.println(" wrist <angle>         - Set Wrist servo angle (0-180)");
     SerialBT.println("  help                 - Print this help message");
-    SerialBT.println("  maze                 - Start maze solving");
-    SerialBT.println("  stopmaze             - Stop maze solving");
-    SerialBT.println("  go                   - Start moving with current settings");
-    SerialBT.println("  stop                 - Stop all movement");
 }
