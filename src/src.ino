@@ -335,12 +335,24 @@ void printHelp()
       while (SerialBT.readStringUntil('\n') != "stopmaze") {
         solveMaze();
       }
+      solveMazeInit();
+      while (SerialBT.readStringUntil('\n') != "stopmaze") {
+        solveMaze();
+      }
     } else if (command == "right") {
       rotateDegrees(-90);
       while (!isRotationComplete())
         ;
       moveCar(0, 0);
+      rotateDegrees(-90);
+      while (!isRotationComplete())
+        ;
+      moveCar(0, 0);
     } else if (command == "left") {
+      rotateDegrees(90);
+      while (!isRotationComplete())
+        ;
+      moveCar(0, 0);
       rotateDegrees(90);
       while (!isRotationComplete())
         ;
@@ -352,19 +364,27 @@ void printHelp()
       moveCar(0, 0);
     } else if (command == "go") {
       while (1) {
+      while (1) {
         stablilizerControl();
         moveCar(rightMotorSpeed, leftMotorSpeed);
       }
     } else if (command == "stop") {
 
     } else if (command == "readings" || command == "sensors" || command == "r" || command == "R") {
+    } else if (command == "readings" || command == "sensors" || command == "r" || command == "R") {
       SerialBT.println("=== Sensor Readings ===");
+      SerialBT.println("Front Distance: " + String(getFrontDistance()));
+      SerialBT.println("Right Distance: " + String(getRightDistance()));
+      SerialBT.println("Left Distance: " + String(getLeftDistance()));
       SerialBT.println("Front Distance: " + String(getFrontDistance()));
       SerialBT.println("Right Distance: " + String(getRightDistance()));
       SerialBT.println("Left Distance: " + String(getLeftDistance()));
     } else if (command == "u") {
       // Display current sensor readings and PID parameters
       SerialBT.println("=== Sensor Readings ===");
+      SerialBT.println("Front Distance: " + String(getFrontDistance()));
+      SerialBT.println("Right Distance: " + String(getRightDistance()));
+      SerialBT.println("Left Distance: " + String(getLeftDistance()));
       SerialBT.println("Front Distance: " + String(getFrontDistance()));
       SerialBT.println("Right Distance: " + String(getRightDistance()));
       SerialBT.println("Left Distance: " + String(getLeftDistance()));
