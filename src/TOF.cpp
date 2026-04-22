@@ -77,9 +77,12 @@ void TofInit()
     Wire.begin(SDA_PIN, SCL_PIN);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     // 2. Set the speed to 400kHz (Fast Mode)
     Wire.setClock(400000);
 
+=======
+>>>>>>> parent of 2103939 (Refactor maze solving logic and improve sensor reading handling)
 =======
 >>>>>>> parent of 2103939 (Refactor maze solving logic and improve sensor reading handling)
     Serial.println("\n--- Starting ToF Boot Sequence ---");
