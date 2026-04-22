@@ -31,7 +31,7 @@ void executeCommand(char command)
     case 'S': // Stop all motors
         driveMecanum(0, 0, 0);
         break;
-        
+
     case 'Y': // Honk horn
     case 'X': // Turn headlight ON
     case 'x': // Turn headlight OFF

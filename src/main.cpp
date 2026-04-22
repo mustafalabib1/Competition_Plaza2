@@ -27,7 +27,7 @@
 // // --- Constants for Control ---
 // // Driving
 // const float JOYSTICK_DEADZONE = 0.1f; // 10% deadzone for joystick
-// const float ROTATION_DEADZONE = 0.4f; // 40% deadzone for rotation
+// const float ROTATION_DEADZONE = 0.2f; // 20% deadzone for rotation
 // const int MAX_MOTOR_SPEED = 255;
 
 // // Robot Arm
@@ -105,6 +105,7 @@
 //         if (isAutonomousMode)
 //         {
 //             Serial.println("Switched to Autonomous Mode");
+//             solveMaze(); // Start maze solving immediately upon switching to autonomous mode
 //             // Stop motors when switching modes to prevent unexpected movement
 //             moveCar(0, 0);
 //         }

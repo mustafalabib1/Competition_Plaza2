@@ -6,7 +6,7 @@ NonBlockingDelay rotationDelay;
 void rotateDegrees(int degrees)
 {
     int direction = (degrees < 0) ? -1 : 1;
-    float arcLength = PI * TRACK_WIDTH * (abs(degrees*1.00) / 360.0);
+    float arcLength = PI * TRACK_WIDTH * (abs(degrees * 1.00) / 360.0);
     float wheelCircumference = PI * WHEEL_DIAMETER;
     float revolutions = arcLength / wheelCircumference;
     float timeSeconds = (revolutions * 60.0) / (MOTOR_RPM * robotState.baseSpeed / 255.0);
@@ -22,12 +22,12 @@ void rotateDegrees(int degrees)
 }
 bool isRotationComplete()
 {
-  if (rotationDelay.isFinished())
-  {
-    moveCar(0, 0); // Stop
-    return true;
-  }
-  return false;
+    if (rotationDelay.isFinished())
+    {
+        moveCar(0, 0); // Stop
+        return true;
+    }
+    return false;
 }
 
 void Right90()
