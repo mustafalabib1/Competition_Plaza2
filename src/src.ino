@@ -179,6 +179,16 @@ void loop()
             }
             SerialBT.println("Exited Stabilizer Test mode.");
         }
+        else if (command == "mazef")
+        {
+            unsigned long previousMillis = millis();
+            while (millis() - previousMillis < 2000)
+            {
+                solveMaze();
+            }
+            moveCar(0, 0);
+            SerialBT.println("Finished forced maze solving.");
+        }
         else if (command == "maze")
         {
             SerialBT.println("Solving Maze...");
@@ -196,8 +206,10 @@ void loop()
         }
         else if (command == "left")
         {
+            SerialBT.printf("start left ");
             Left90();
             moveCar(0, 0);
+            SerialBT.printf("end left ");
         }
         else if (command == "uturn")
         {
@@ -303,6 +315,7 @@ void printHelp()
     SerialBT.println(" gripper2 <angle>      - Set Gripper2 servo speed (0-180, 90=stop)");
     SerialBT.println(" wrist <angle>         - Set Wrist servo angle (0-180)");
     SerialBT.println("  help                 - Print this help message");
+    SerialBt.println("  mazef                - Perform two second of maze solving");
     SerialBT.println("  maze                 - Start maze solving");
     SerialBT.println("  stopmaze             - Stop maze solving");
     SerialBT.println("  go                   - Start moving with current settings");
