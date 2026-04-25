@@ -8,7 +8,6 @@
 // #include "ESP32Servo.h"
 // #include "MazeSolve.h"
 
-// bool isOg = false;
 // bool isMazeSolving = false;
 // // Bluetooth communication object
 // BluetoothSerial SerialBT;
@@ -209,12 +208,14 @@
 //         }
 //         else if (command == "go")
 //         {
-//             isOg = true;
-//         }
-//         else if (command == "stop")
-//         {
-//             isOg = false;
-//             moveCar(0, 0);
+//             unsigned long previousMillis = millis();
+//             while (millis() - previousMillis < 1500)
+//             {
+//                 readSensors();
+//                 stablilizerControl();
+//                 moveCar(rightMotorSpeed, leftMotorSpeed);
+//                 SerialBT.printf("Error is %lf Right Motor Speed: %d, Left Motor Speed: %d\n", pid_error, rightMotorSpeed, leftMotorSpeed);
+//             }
 //         }
 
 //         else if (command == "readings" || command == "sensors" || command == "r" || command == "R")
@@ -253,12 +254,6 @@
 //             SerialBT.printf("Ki: %.2f\n", robotState.ki);
 //             SerialBT.printf("Kd: %.2f\n", robotState.kd);
 //         }
-//     }
-//     if (isOg)
-//     {
-//         stablilizerControl();
-//         moveCar(rightMotorSpeed, leftMotorSpeed);
-//         SerialBT.printf("Right Motor Speed: %d, Left Motor Speed: %d\n", rightMotorSpeed, leftMotorSpeed);
 //     }
 //     if (isMazeSolving)
 //     {

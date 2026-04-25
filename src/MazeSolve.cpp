@@ -28,8 +28,8 @@ void stablilizerControl()
     rightMotorSpeed = robotState.baseSpeed + (int)pid_output;
     leftMotorSpeed = robotState.baseSpeed - (int)pid_output;
     // Constrain motor speeds to valid range
-    rightMotorSpeed = constrain(rightMotorSpeed, -250, 255);
-    leftMotorSpeed = constrain(leftMotorSpeed, -250, 255);
+    rightMotorSpeed = constrain(rightMotorSpeed, 0, 250);
+    leftMotorSpeed = constrain(leftMotorSpeed, 0, 250);
 }
 
 void readSensors()

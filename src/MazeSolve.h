@@ -9,6 +9,7 @@
 
 // Variables to store motor speeds
 extern int rightMotorSpeed, leftMotorSpeed;
+extern double pid_error;
 // Enum for Maze solving state machine
 enum MazeState
 {
