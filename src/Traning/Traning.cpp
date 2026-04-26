@@ -130,12 +130,12 @@
 //             robotState.frontThreshold = command.substring(2).toFloat();
 //             SerialBT.printf("Front Distance Threshold: %.2f\n", robotState.frontThreshold);
 //         }
-//         else if (command.startsWith("rf"))
+//         else if (command.startsWith("rt"))
 //         {
 //             robotState.rightThreshold = command.substring(2).toFloat();
 //             SerialBT.printf("Right Distance Threshold: %.2f\n", robotState.rightThreshold);
 //         }
-//         else if (command.startsWith("lf"))
+//         else if (command.startsWith("lt"))
 //         {
 //             robotState.leftThreshold = command.substring(2).toFloat();
 //             SerialBT.printf("Left Distance Threshold: %.2f\n", robotState.leftThreshold);
@@ -179,6 +179,17 @@
 //             }
 //             SerialBT.println("Exited Stabilizer Test mode.");
 //         }
+//         else if (command == "mazef")
+//         {
+//             unsigned long previousMillis = millis();
+//             while (millis() - previousMillis < 2000)
+//             {
+//                 solveMaze();
+//                 SerialBT.printf("maze state is %d\n", currentMazeState);
+//             }
+//             moveCar(0, 0);
+//             SerialBT.println("Finished forced maze solving.");
+//         }
 //         else if (command == "maze")
 //         {
 //             SerialBT.println("Solving Maze...");
@@ -196,8 +207,10 @@
 //         }
 //         else if (command == "left")
 //         {
+//             SerialBT.printf("start left ");
 //             Left90();
 //             moveCar(0, 0);
+//             SerialBT.printf("end left ");
 //         }
 //         else if (command == "uturn")
 //         {
@@ -216,8 +229,20 @@
 //                 moveCar(rightMotorSpeed, leftMotorSpeed);
 //                 SerialBT.printf("Error is %lf Right Motor Speed: %d, Left Motor Speed: %d\n", pid_error, rightMotorSpeed, leftMotorSpeed);
 //             }
+//             moveCar(0, 0);
 //         }
-
+//         else if (command == "fr")
+//         {
+//             SerialBT.println("Right Distance: " + String(getRightDistance()));
+//         }
+//         else if (command == "fl")
+//         {
+//             SerialBT.println("Left Distance: " + String(getLeftDistance()));
+//         }
+//         else if (command == "ff")
+//         {
+//             SerialBT.println("Front Distance: " + String(getFrontDistance()));
+//         }
 //         else if (command == "readings" || command == "sensors" || command == "r" || command == "R")
 //         {
 //             SerialBT.println("=== Sensor Readings ===");
@@ -302,8 +327,30 @@
 //     SerialBT.println(" gripper2 <angle>      - Set Gripper2 servo speed (0-180, 90=stop)");
 //     SerialBT.println(" wrist <angle>         - Set Wrist servo angle (0-180)");
 //     SerialBT.println("  help                 - Print this help message");
+//     SerialBT.println("  mazef                - Perform two second of maze solving");
 //     SerialBT.println("  maze                 - Start maze solving");
 //     SerialBT.println("  stopmaze             - Stop maze solving");
 //     SerialBT.println("  go                   - Start moving with current settings");
 //     SerialBT.println("  stop                 - Stop all movement");
 // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
