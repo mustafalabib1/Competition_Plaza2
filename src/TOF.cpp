@@ -17,10 +17,41 @@ VL53L1X sensorLeft;
 VL53L1X sensorFront;
 VL53L1X sensorRight;
 
-// Distances
+// Distances (global, can be used elsewhere)
 double FrontDistance = 0;
 double RightDistance = 0;
 double LeftDistance = 0;
+
+// ------------------ Moving Average Filter ------------------
+const int FILTER_SIZE = 5;
+uint16_t frontBuffer[FILTER_SIZE] = {0};
+uint16_t rightBuffer[FILTER_SIZE] = {0};
+uint16_t leftBuffer[FILTER_SIZE] = {0};
+uint8_t frontIdx = 0, rightIdx = 0, leftIdx = 0;
+
+// Smooths a raw reading (must be valid: < 8000 mm)
+float getFilteredDistance(uint16_t raw, uint16_t *buffer, uint8_t &idx)
+{
+    // If raw is out of range, keep the buffer unchanged (no update)
+    if (raw == 0 || raw > 8000)
+    {
+        // Return 0 to indicate error, but you could also return the last valid
+        return 0;
+    }
+
+    buffer[idx] = raw;
+    idx = (idx + 1) % FILTER_SIZE;
+
+    // Compute average of all valid entries in the buffer
+    uint32_t sum = 0;
+    for (int i = 0; i < FILTER_SIZE; i++)
+    {
+        sum += buffer[i];
+    }
+    return sum / (float)FILTER_SIZE;
+}
+
+// -----------------------------------------------------------
 
 // Helper function to initialize a sensor and handle Soft Reset recovery
 bool initTofSensor(VL53L1X &sensor, uint8_t targetAddress, const char *name)
@@ -35,8 +66,6 @@ bool initTofSensor(VL53L1X &sensor, uint8_t targetAddress, const char *name)
         Serial.print(targetAddress, HEX);
         Serial.println(" (Soft Reset recovery)...");
 
-        // Update the sensor's internal address object to the target
-        // (Even if writing to 0x29 fails, it updates internal address to targetAddress)
         sensor.setAddress(targetAddress);
 
         // 2. Try to initialize at the new target address
@@ -63,10 +92,10 @@ bool initTofSensor(VL53L1X &sensor, uint8_t targetAddress, const char *name)
         Serial.println(targetAddress, HEX);
     }
 
-    // Configure the sensor
-    sensor.setDistanceMode(VL53L1X::Long);
-    sensor.setMeasurementTimingBudget(50000);
-    sensor.startContinuous(65);
+    // Configure the sensor – increased timing budget for stability
+    sensor.setDistanceMode(VL53L1X::Short);    // Short mode (up to ~1.3 m)
+    sensor.setMeasurementTimingBudget(200000); // 200 ms = much more stable
+    sensor.startContinuous(210);               // period must be >= timing budget
 
     return true;
 }
@@ -76,18 +105,17 @@ void TofInit()
     Serial.begin(115200);
     Wire.begin(SDA_PIN, SCL_PIN);
 
-    // 2. Set the speed to 400kHz (Fast Mode)
+    // Set I2C speed to 400kHz (Fast Mode)
     Wire.setClock(400000);
 
     Serial.println("\n--- Starting ToF Boot Sequence ---");
 
     // 1. HARDWARE SHUTDOWN FOR FRONT & RIGHT
-    // We only pull Front and Right LOW because Left is hardwired to stay awake
     pinMode(FRONT_XSHUT, OUTPUT);
     pinMode(RIGHT_XSHUT, OUTPUT);
     digitalWrite(FRONT_XSHUT, LOW);
     digitalWrite(RIGHT_XSHUT, LOW);
-    delay(150); // Crucial: Give capacitors time to drain completely
+    delay(150); // Crucial: let capacitors drain completely
 
     /* --- Activate LEFT sensor (Always Awake) --- */
     Serial.println("Initializing hardwired LEFT sensor...");
@@ -115,7 +143,6 @@ void PowerOffTofSensors()
     sensorRight.stopContinuous();
 
     // Pull LOW to physically force Front and Right to sleep
-    // (Left will stay awake, but stopped reading to save logic power)
     digitalWrite(FRONT_XSHUT, LOW);
     digitalWrite(RIGHT_XSHUT, LOW);
 
@@ -125,28 +152,30 @@ void PowerOffTofSensors()
 float getFrontDistance()
 {
     uint16_t rawDist = sensorFront.read();
-    if (sensorFront.timeoutOccurred() || rawDist > 8000)
+    if (sensorFront.timeoutOccurred())
+    {
         return 0;
-
-    return rawDist;
+    }
+    // Use filter: returns 0 if raw > 8000, otherwise smoothed value
+    return getFilteredDistance(rawDist, frontBuffer, frontIdx);
 }
 
 float getRightDistance()
 {
     uint16_t rawDist = sensorRight.read();
-    if (sensorRight.timeoutOccurred() || rawDist > 8000)
+    if (sensorRight.timeoutOccurred())
     {
         return 0;
     }
-    return rawDist;
+    return getFilteredDistance(rawDist, rightBuffer, rightIdx);
 }
 
 float getLeftDistance()
 {
     uint16_t rawDist = sensorLeft.read();
-    if (sensorLeft.timeoutOccurred() || rawDist > 8000)
+    if (sensorLeft.timeoutOccurred())
     {
         return 0;
     }
-    return rawDist;
+    return getFilteredDistance(rawDist, leftBuffer, leftIdx);
 }
