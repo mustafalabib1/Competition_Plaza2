@@ -231,7 +231,18 @@ void loop()
             }
             moveCar(0, 0);
         }
-
+        else if (command == "fr")
+        {
+            SerialBT.println("Right Distance: " + String(getRightDistance()));
+        }
+        else if (command == "fl")
+        {
+            SerialBT.println("Left Distance: " + String(getLeftDistance()));
+        }
+        else if (command == "ff")
+        {
+            SerialBT.println("Front Distance: " + String(getFrontDistance()));
+        }
         else if (command == "readings" || command == "sensors" || command == "r" || command == "R")
         {
             SerialBT.println("=== Sensor Readings ===");
