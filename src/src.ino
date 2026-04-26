@@ -130,12 +130,12 @@ void loop()
             robotState.frontThreshold = command.substring(2).toFloat();
             SerialBT.printf("Front Distance Threshold: %.2f\n", robotState.frontThreshold);
         }
-        else if (command.startsWith("rf"))
+        else if (command.startsWith("rt"))
         {
             robotState.rightThreshold = command.substring(2).toFloat();
             SerialBT.printf("Right Distance Threshold: %.2f\n", robotState.rightThreshold);
         }
-        else if (command.startsWith("lf"))
+        else if (command.startsWith("lt"))
         {
             robotState.leftThreshold = command.substring(2).toFloat();
             SerialBT.printf("Left Distance Threshold: %.2f\n", robotState.leftThreshold);
