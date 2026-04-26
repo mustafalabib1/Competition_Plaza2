@@ -49,16 +49,8 @@ void Swap(double &a, double &b)
 }
 void decide()
 {
-    if (currentMazeState == MAZE_TURNING_RIGHT || currentMazeState == MAZE_TURNING_LEFT || currentMazeState == MAZE_UTURNING)
-    {
-        // check if rotation is't complete
-        if (isRotationComplete())
-        {
-            return; // Wait until rotation is complete before making new decisions
-        }
-    }
     // Implement maze solving logic here
-    if (LeftDistance > robotState.frontThreshold)
+    if (LeftDistance > robotState.leftThreshold)
     {
         currentMazeState = MAZE_TURNING_LEFT;
     }
@@ -66,7 +58,7 @@ void decide()
     {
         currentMazeState = MAZE_MOVING_FORWARD;
     }
-    else if (RightDistance > robotState.frontThreshold)
+    else if (RightDistance > robotState.rightThreshold)
     {
         currentMazeState = MAZE_TURNING_RIGHT;
     }

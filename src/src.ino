@@ -185,6 +185,7 @@ void loop()
             while (millis() - previousMillis < 2000)
             {
                 solveMaze();
+                SerialBT.printf("maze state is %d\n", currentMazeState);
             }
             moveCar(0, 0);
             SerialBT.println("Finished forced maze solving.");
@@ -315,7 +316,7 @@ void printHelp()
     SerialBT.println(" gripper2 <angle>      - Set Gripper2 servo speed (0-180, 90=stop)");
     SerialBT.println(" wrist <angle>         - Set Wrist servo angle (0-180)");
     SerialBT.println("  help                 - Print this help message");
-    SerialBt.println("  mazef                - Perform two second of maze solving");
+    SerialBT.println("  mazef                - Perform two second of maze solving");
     SerialBT.println("  maze                 - Start maze solving");
     SerialBT.println("  stopmaze             - Stop maze solving");
     SerialBT.println("  go                   - Start moving with current settings");

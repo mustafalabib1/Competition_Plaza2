@@ -20,9 +20,9 @@ struct RobotState {
   // Maze solving state
   bool isLeftHandSide = true;  // Default to left-hand side
 
-  float frontThreshold = 20.0;  // Distance threshold for obstacle detection in cm
-  float leftThreshold = 20.0;
-  float rightThreshold = 20.0;
+  float frontThreshold = 200.0;  // Distance threshold for obstacle detection in mm
+  float leftThreshold = 200.0;
+  float rightThreshold = 200.0;
 
 
   // EEPROM address tracking
