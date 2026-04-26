@@ -64,9 +64,9 @@ bool initTofSensor(VL53L1X &sensor, uint8_t targetAddress, const char *name)
     }
 
     // Configure the sensor
-    sensor.setDistanceMode(VL53L1X::Short);
+    sensor.setDistanceMode(VL53L1X::Long);
     sensor.setMeasurementTimingBudget(50000);
-    sensor.startContinuous(50);
+    sensor.startContinuous(65);
 
     return true;
 }
