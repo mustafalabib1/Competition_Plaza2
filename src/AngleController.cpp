@@ -31,8 +31,8 @@ bool isRotationComplete() {
 void Right90() {
   unsigned long pretime = millis();
 
-  while (millis() - pretime <= 930) {
-    moveCar(255, 30);
+  while (millis() - pretime <= 600) {
+    moveCar(255, -150);
   }
   pretime = millis();
   while (millis() - pretime <= 200) {
@@ -44,8 +44,8 @@ void Right90() {
 // rotateDegrees(90);
 void Left90() {
   unsigned long pretime = millis();
-  while (millis() - pretime <= 930) {
-    moveCar(30, 255);
+  while (millis() - pretime <= 800) {
+    moveCar(-50, 255);
   }
   pretime = millis();
   while (millis() - pretime <= 200) {
