@@ -182,7 +182,7 @@
 //         else if (command == "mazef")
 //         {
 //             unsigned long previousMillis = millis();
-//             while (millis() - previousMillis < 2000)
+//             while (millis() - previousMillis < 13000)
 //             {
 //                 solveMaze();
 //                 SerialBT.printf("maze state is %d\n", currentMazeState);
@@ -333,24 +333,3 @@
 //     SerialBT.println("  go                   - Start moving with current settings");
 //     SerialBT.println("  stop                 - Stop all movement");
 // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,6 +1,6 @@
-
-#include "BluetoothSerial.h"
+#include "PS4Controller.h"
 #include "motors.h"
+#include "RobotState.h"
 #include "NonBlockingDelay.h"
 #include "AngleController.h"
 #include "RC.h"
@@ -8,328 +8,270 @@
 #include "ESP32Servo.h"
 #include "MazeSolve.h"
 
-bool isMazeSolving = false;
-// Bluetooth communication object
-BluetoothSerial SerialBT;
+/* --- SERVO MOTORS --- */
+#define SHOULDER_SERVO 13
+#define ELBOW_SERVO 25
+#define GRIPPER1_SERVO 32
+#define GRIPPER2_SERVO 18
+#define WRIST_SERVO 23
 
-void printHelp(); // Forward declaration
+Servo Shoulder, Elbow, Gripper1, Gripper2, Wrist;
+
+// servo initial angles
+int shoulderAngle = 90; // Start at a neutral position
+int elbowAngle = 90;
+int gripper1Angle = 90;
+int gripper2Angle = 90;
+int wristAngle = 135;
+
+// --- Constants for Control ---
+// Driving
+const float JOYSTICK_DEADZONE = 0.1f; // 10% deadzone for joystick
+const float ROTATION_DEADZONE = 0.2f; // 20% deadzone for rotation
+const int MAX_MOTOR_SPEED = 255;
+
+// Robot Arm
+const int ARM_ANGLE_STEP = 1;
+const int ARM_MIN_ANGLE = 0;
+const int ARM_MAX_ANGLE = 180;
+
+// Gripper 1 (Standard Servo)
+const int GRIPPER_OPEN_ANGLE = 90;
+const int GRIPPER_CLOSED_ANGLE = 0;
+
+// Gripper 2 (Continuous Rotation Servo)
+const int GRIPPER_CONTINUOUS_FORWARD = 180; // Spin forward
+const int GRIPPER_CONTINUOUS_BACKWARD = 0;  // Spin backward
+const int GRIPPER_CONTINUOUS_STOP = 90;     // Stop spinning
+
+// --- Global Variables ---
+bool isAutonomousMode = false; // Start in teleop mode
+
+unsigned long WristDelay = millis();
+unsigned long shoulderDelay = millis();
+unsigned long elbowDelay = millis();
+
+// --- Function Prototypes ---
+void handleModeSwitching();
+void handleTeleopDrive();
+void handleRobotArmControl();
+void initServos();
+
+// make task for maze solveing
+TaskHandle_t MazeSolveTask_handle = NULL;
+
+void MazeSolveTask(void *parameters)
+{
+    for (;;)
+    {
+        solveMaze();
+        // vTaskDelay(5 / portTICK_PERIOD_MS);
+    }
+}
 
 void setup()
 {
-    // Initialize serial communication for debugging
+    // put your setup code here, to run once:
     Serial.begin(115200);
     initializeRobotState();
     MotorsInit();
+    initServos();
     TofInit();
+    initServos();
     solveMazeInit();
-    // Initialize Bluetooth communication
-    SerialBT.begin("ESP32test");
-    Serial.println("The device started, now you can pair it with bluetooth!");
 
-    while (!SerialBT.available())
-    {
-        // Wait for data to be available
-    }
-    Serial.println("Bluetooth device is ready to pair");
+    // create maze task
+    xTaskCreate(
+        MazeSolveTask,        // function name
+        "MazeSolveTask",      // Task Name
+        4096,                 // CRITICAL FIX: Increased memory from 1000 to 4096
+        NULL,                 // Task parameters
+        1,                    // Priority
+        &MazeSolveTask_handle // CRITICAL FIX: You MUST use the '&' symbol here!
+    );
+    // Now this will correctly suspend the maze task, instead of freezing setup()!
+    vTaskSuspend(MazeSolveTask_handle);
 
-    // Load saved parameters from EEPROM
-    loadRobotStateFromEEPROM();
-
-    SerialBT.printf("baseSpeed: %d\n", robotState.baseSpeed);
-    SerialBT.printf("rightRatio: %d\n", robotState.rightRatio);
-    SerialBT.printf("leftRatio: %d\n", robotState.leftRatio);
-    SerialBT.printf("ROTATION_CALIBRATION: %.2f\n", robotState.rotationCalibration);
-    SerialBT.printf("Kp: %.2f\n", robotState.kp);
-    SerialBT.printf("Kd: %.2f\n", robotState.kd);
-    SerialBT.printf("Ki: %.2f\n", robotState.ki);
-    SerialBT.printf("uturnAngle: %d\n", robotState.uturnAngle);
-    SerialBT.println();
-    SerialBT.println("Type 'help' for a list of commands.");
-    SerialBT.println("Save");
+    PS4.begin("00:4b:12:3c:5a:82"); // Replace with your ESP32's MAC address
+    Serial.println("Waiting for PS4 controller to connect...");
 }
 
 void loop()
 {
-    if (SerialBT.available())
+    if (PS4.isConnected())
     {
-        String command = SerialBT.readStringUntil('\n');
-        command.trim(); // Remove trailing spaces and carriage returns
+        handleModeSwitching();
 
-        if (command.length() == 0)
-            return; // Ignore empty lines
-        command.toLowerCase();
-
-        // Motor control commands
-        if (command.startsWith("basespeed"))
+        if (isAutonomousMode)
         {
-            int newSpeed = command.substring(9).toInt();
-            robotState.baseSpeed = newSpeed;
-            SerialBT.printf("baseSpeed: %d\n", robotState.baseSpeed);
+            // Autonomous mode logic here (not implemented in this example)
+            // solveMaze();
         }
-        else if (command.startsWith("rightratio"))
+        else
         {
-            int newRatio = command.substring(10).toInt();
-            robotState.rightRatio = newRatio;
-            SerialBT.printf("rightRatio: %d\n", robotState.rightRatio);
+            // --- Teleop Control Logic ---
+            handleTeleopDrive();
+            handleRobotArmControl();
         }
-        else if (command.startsWith("leftratio"))
-        {
-            int newRatio = command.substring(9).toInt();
-            robotState.leftRatio = newRatio;
-            SerialBT.printf("leftRatio: %d\n", robotState.leftRatio);
-        }
-        else if (command.startsWith("rotc"))
-        {
-            robotState.rotationCalibration = command.substring(4).toFloat();
-            SerialBT.printf("ROTATION_CALIBRATION: %.2f\n", robotState.rotationCalibration);
-        }
-        else if (command.startsWith("kp"))
-        {
-            float newKp = command.substring(2).toFloat();
-            robotState.kp = newKp;
-            SerialBT.printf("Kp: %.2f\n", robotState.kp);
-        }
-        else if (command.startsWith("kd"))
-        {
-            float newKd = command.substring(2).toFloat();
-            robotState.kd = newKd;
-            SerialBT.printf("Kd: %.2f\n", robotState.kd);
-        }
-        else if (command.startsWith("ki"))
-        {
-            float newKi = command.substring(2).toFloat();
-            robotState.ki = newKi;
-            SerialBT.printf("Ki: %.2f\n", robotState.ki);
-        }
-        else if (command.startsWith("uturnangle"))
-        {
-            robotState.uturnAngle = command.substring(10).toInt();
-            SerialBT.printf("UTurn Angle: %d\n", robotState.uturnAngle);
-        }
-        else if (command.startsWith("islefthand"))
-        {
-            String value = command.substring(10);
-            value.trim();
-            if (value == "true" || value == "1")
-            {
-                robotState.isLeftHandSide = true;
-                SerialBT.println("Set to Left-Hand Side Maze Solving");
-            }
-            else if (value == "false" || value == "0")
-            {
-                robotState.isLeftHandSide = false;
-                SerialBT.println("Set to Right-Hand Side Maze Solving");
-            }
-            else
-            {
-                SerialBT.println("Invalid value for isLeftHand. Use 'true' or 'false'.");
-            }
-        }
-        else if (command.startsWith("ft"))
-        {
-            robotState.frontThreshold = command.substring(2).toFloat();
-            SerialBT.printf("Front Distance Threshold: %.2f\n", robotState.frontThreshold);
-        }
-        else if (command.startsWith("rt"))
-        {
-            robotState.rightThreshold = command.substring(2).toFloat();
-            SerialBT.printf("Right Distance Threshold: %.2f\n", robotState.rightThreshold);
-        }
-        else if (command.startsWith("lt"))
-        {
-            robotState.leftThreshold = command.substring(2).toFloat();
-            SerialBT.printf("Left Distance Threshold: %.2f\n", robotState.leftThreshold);
-        }
-        else if (command.startsWith("save"))
-        {
-            saveRobotStateToEEPROM();
-            SerialBT.println("Saved");
-        }
-        else if (command.startsWith("help"))
-        {
-            printHelp();
-        }
-        else if (command.startsWith("rc"))
-        {
-            SerialBT.println("Entered RC mode. Send 'X' to exit.");
-            char RC = 's';
-            while (RC != 'X' && RC != 'x')
-            {
-                if (SerialBT.available())
-                {
-                    RC = SerialBT.read();
-                    executeCommand(RC);
-                }
-                delay(10); // Prevent tight loop from starving the watchdog
-            }
-            SerialBT.println("Exited RC mode.");
-        }
-        else if (command.startsWith("stab"))
-        {
-            SerialBT.println("Entered Stabilizer Test mode. Send 'X' to exit.");
-            char stabCommand = 's';
-            while (stabCommand != 'X' && stabCommand != 'x')
-            {
-                if (SerialBT.available())
-                {
-                    stabCommand = SerialBT.read();
-                    stablilizerControlTest(stabCommand);
-                }
-                delay(10); // Prevent tight loop from starving the watchdog
-            }
-            SerialBT.println("Exited Stabilizer Test mode.");
-        }
-        else if (command == "mazef")
-        {
-            unsigned long previousMillis = millis();
-            while (millis() - previousMillis < 2000)
-            {
-                solveMaze();
-                SerialBT.printf("maze state is %d\n", currentMazeState);
-            }
-            moveCar(0, 0);
-            SerialBT.println("Finished forced maze solving.");
-        }
-        else if (command == "maze")
-        {
-            SerialBT.println("Solving Maze...");
-            isMazeSolving = true;
-        }
-        else if (command == "stopmaze")
-        {
-            SerialBT.println("Stopped Maze Solving.");
-            isMazeSolving = false;
-        }
-        else if (command == "right")
-        {
-            Right90();
-            moveCar(0, 0);
-        }
-        else if (command == "left")
-        {
-            SerialBT.printf("start left ");
-            Left90();
-            moveCar(0, 0);
-            SerialBT.printf("end left ");
-        }
-        else if (command == "uturn")
-        {
-            UTurn();
-            while (!isRotationComplete())
-                ;
-            moveCar(0, 0);
-        }
-        else if (command == "go")
-        {
-            unsigned long previousMillis = millis();
-            while (millis() - previousMillis < 1500)
-            {
-                readSensors();
-                stablilizerControl();
-                moveCar(rightMotorSpeed, leftMotorSpeed);
-                SerialBT.printf("Error is %lf Right Motor Speed: %d, Left Motor Speed: %d\n", pid_error, rightMotorSpeed, leftMotorSpeed);
-            }
-            moveCar(0, 0);
-        }
-        else if (command == "fr")
-        {
-            SerialBT.println("Right Distance: " + String(getRightDistance()));
-        }
-        else if (command == "fl")
-        {
-            SerialBT.println("Left Distance: " + String(getLeftDistance()));
-        }
-        else if (command == "ff")
-        {
-            SerialBT.println("Front Distance: " + String(getFrontDistance()));
-        }
-        else if (command == "readings" || command == "sensors" || command == "r" || command == "R")
-        {
-            SerialBT.println("=== Sensor Readings ===");
-            SerialBT.println("Front Distance: " + String(getFrontDistance()));
-            SerialBT.println("Right Distance: " + String(getRightDistance()));
-            SerialBT.println("Left Distance: " + String(getLeftDistance()));
-        }
-        else if (command == "u")
-        {
-            // Display current sensor readings and PID parameters
-            SerialBT.println("=== Sensor Readings ===");
-            SerialBT.println("Front Distance: " + String(getFrontDistance()));
-            SerialBT.println("Right Distance: " + String(getRightDistance()));
-            SerialBT.println("Left Distance: " + String(getLeftDistance()));
-            SerialBT.println();
-            SerialBT.println("=== PID Parameters ===");
-            SerialBT.printf("Kp: %.2f\n", robotState.kp);
-            SerialBT.printf("Ki: %.2f\n", robotState.ki);
-            SerialBT.printf("Kd: %.2f\n", robotState.kd);
-            SerialBT.println();
-            SerialBT.println("=== Motor Speeds ===");
-            SerialBT.printf("Base Speed: %d\n", robotState.baseSpeed);
-            SerialBT.printf("Left Ratio: %d\n", robotState.leftRatio);
-            SerialBT.printf("Right Ratio: %d\n", robotState.rightRatio);
-        }
-        else if (command.startsWith("resetpid"))
-        {
-            // Reset PID parameters to default values
-            robotState.kp = 1.0;
-            robotState.ki = 0.0;
-            robotState.kd = 0.0;
-            SerialBT.println("PID parameters reset to defaults:");
-            SerialBT.printf("Kp: %.2f\n", robotState.kp);
-            SerialBT.printf("Ki: %.2f\n", robotState.ki);
-            SerialBT.printf("Kd: %.2f\n", robotState.kd);
-        }
-    }
-    if (isMazeSolving)
-    {
-        solveMaze();
     }
 }
 
-void printHelp()
+void handleModeSwitching()
 {
-    SerialBT.println("=== Available Commands ===");
-    SerialBT.println();
-    SerialBT.println("Motor Control:");
-    SerialBT.printf("  basespeed <value>    - Set the base speed (current: %d)\n", robotState.baseSpeed);
-    SerialBT.printf("  rightratio <value>   - Set the right ratio (current: %d)\n", robotState.rightRatio);
-    SerialBT.printf("  leftratio <value>    - Set the left ratio (current: %d)\n", robotState.leftRatio);
-    SerialBT.println();
-    SerialBT.println("Sensor Calibration:");
-    SerialBT.println();
-    SerialBT.println("PID Control:");
-    SerialBT.printf("  kp <value>           - Set Kp for PID (current: %.2f)\n", robotState.kp);
-    SerialBT.printf("  kd <value>           - Set Kd for PID (current: %.2f)\n", robotState.kd);
-    SerialBT.printf("  ki <value>           - Set Ki for PID (current: %.2f)\n", robotState.ki);
-    SerialBT.println();
-    SerialBT.println("Navigation:");
-    SerialBT.printf("  rotc <value>         - Set Rotation Calibration (current: %.2f)\n", robotState.rotationCalibration);
-    SerialBT.printf("  uturnangle <value>   - Set U-Turn Angle (current: %d)\n", robotState.uturnAngle);
-    SerialBT.println();
-    SerialBT.println("Testing Commands:");
-    SerialBT.println("  right                - Rotate right 90 degrees");
-    SerialBT.println("  left                 - Rotate left 90 degrees");
-    SerialBT.println("  uturn                - Perform U-Turn");
-    SerialBT.println("  u                    - Display current sensor readings and PID parameters");
-    SerialBT.println();
-    SerialBT.println("System Commands:");
-    SerialBT.println("  save                 - Save settings to EEPROM");
-    SerialBT.println("  rc                   - Enter RC mode");
-    SerialBT.println("  stab                 - Enter Stabilizer Test mode");
-    SerialBT.println("  resetpid             - Reset PID parameters to defaults");
-    SerialBT.println(" islefthand <true/false> - Set maze solving side (current: " + String(robotState.isLeftHandSide ? "Left" : "Right") + ")");
-    SerialBT.println(" ft <value>            - Set Front Distance Threshold (current: " + String(robotState.frontThreshold) + ")");
-    SerialBT.println(" rt <value>            - Set Right Distance Threshold (current: " + String(robotState.rightThreshold) + ")");
-    SerialBT.println(" lt <value>            - Set Left Distance Threshold (current: " + String(robotState.leftThreshold) + ")");
-    SerialBT.println(" shoulder <angle>      - Set Shoulder servo angle (0-180)");
-    SerialBT.println(" elbow <angle>         - Set Elbow servo angle (0-180)");
-    SerialBT.println(" gripper1 <angle>      - Set Gripper1 servo angle (0-180)");
-    SerialBT.println(" gripper2 <angle>      - Set Gripper2 servo speed (0-180, 90=stop)");
-    SerialBT.println(" wrist <angle>         - Set Wrist servo angle (0-180)");
-    SerialBT.println("  help                 - Print this help message");
-    SerialBT.println("  mazef                - Perform two second of maze solving");
-    SerialBT.println("  maze                 - Start maze solving");
-    SerialBT.println("  stopmaze             - Stop maze solving");
-    SerialBT.println("  go                   - Start moving with current settings");
-    SerialBT.println("  stop                 - Stop all movement");
+    // Use a static variable to track the previous state of the PS button
+    // to detect only the button press event, not holding it down.
+    static bool lastPsButtonState = false;
+    bool currentPsButtonState = PS4.PSButton();
+
+    if (currentPsButtonState && !lastPsButtonState)
+    {
+        isAutonomousMode = !isAutonomousMode; // Toggle the mode
+        if (isAutonomousMode)
+        {
+            vTaskResume(MazeSolveTask_handle);
+            Serial.println("Switched to Autonomous Mode");
+        }
+        else
+        {
+            vTaskSuspend(MazeSolveTask_handle);
+            Serial.println("Switched to Teleop Mode");
+        }
+    }
+    lastPsButtonState = currentPsButtonState;
+}
+
+void handleTeleopDrive()
+{
+    // Read and normalize joystick values
+    float y = constrain(-PS4.LStickY() / 127.0f, -1.0f, 1.0f);
+    float x = constrain(PS4.LStickX() / 127.0f, -1.0f, 1.0f);
+    float rotation = constrain(PS4.RStickX() / 127.0f, -1.0f, 1.0f);
+
+    // Apply deadzone to prevent drift from slight joystick movements
+    if (fabs(y) < JOYSTICK_DEADZONE)
+        y = 0;
+    if (fabs(x) < JOYSTICK_DEADZONE)
+        x = 0;
+    if (fabs(rotation) < ROTATION_DEADZONE)
+        rotation = 0;
+
+    // Apply a non-linear response curve (squaring the input) for finer control at low speeds
+    y = y * fabs(y);
+    x = x * fabs(x);
+    rotation = rotation * fabs(rotation);
+
+    // Convert normalized values to motor speeds and drive the robot
+    driveMecanum(x * MAX_MOTOR_SPEED, y * MAX_MOTOR_SPEED, rotation * MAX_MOTOR_SPEED);
+}
+void handleRobotArmControl()
+{
+    // --- Shoulder Control ---
+    if (PS4.Up())
+        if (millis() - shoulderDelay >= 3)
+        {
+            shoulderAngle += ARM_ANGLE_STEP;
+            shoulderDelay = millis();
+        }
+    if (PS4.Down())
+        if (millis() - shoulderDelay >= 3)
+        {
+            shoulderAngle -= ARM_ANGLE_STEP;
+            shoulderDelay = millis();
+        }
+    // --- Elbow Control ---
+    if (PS4.Triangle())
+        if (millis() - elbowDelay >= 3)
+        {
+            elbowAngle += ARM_ANGLE_STEP;
+            elbowDelay = millis();
+        }
+    if (PS4.Cross())
+        if (millis() - elbowDelay >= 3)
+        {
+            elbowAngle -= ARM_ANGLE_STEP;
+            elbowDelay = millis();
+        }
+
+    // --- Gripper 1 (Standard Servo) ---
+    if (PS4.Right())
+        gripper1Angle = GRIPPER_OPEN_ANGLE;
+    if (PS4.Left())
+        gripper1Angle = GRIPPER_CLOSED_ANGLE;
+
+    // --- Wrist Control ---
+    if (PS4.R1())
+        if (millis() - WristDelay >= 3)
+        {
+            wristAngle += ARM_ANGLE_STEP;
+            WristDelay = millis();
+        }
+    if (PS4.L1())
+        if (millis() - WristDelay >= 3)
+        {
+            wristAngle -= ARM_ANGLE_STEP;
+            WristDelay = millis();
+        }
+
+    // --- Gripper 2 (Continuous Rotation Servo) ---
+    if (PS4.R2())
+        gripper2Angle = GRIPPER_CONTINUOUS_FORWARD; // Spin forward
+    else if (PS4.L2())
+        gripper2Angle = GRIPPER_CONTINUOUS_BACKWARD; // Spin backward
+    else
+        gripper2Angle = GRIPPER_CONTINUOUS_STOP; // Stop spinning
+
+    // Constrain all angles to prevent servo damage
+    shoulderAngle = constrain(shoulderAngle, ARM_MIN_ANGLE, ARM_MAX_ANGLE);
+    elbowAngle = constrain(elbowAngle, ARM_MIN_ANGLE, ARM_MAX_ANGLE);
+    wristAngle = constrain(wristAngle, 0, 150);
+    // gripper1Angle is set to specific values, but constraining is good practice
+    gripper1Angle = constrain(gripper1Angle, GRIPPER_CLOSED_ANGLE, GRIPPER_OPEN_ANGLE);
+    // Write angles to servos
+    Shoulder.write(shoulderAngle);
+    Elbow.write(elbowAngle);
+    Gripper1.write(gripper1Angle);
+    Gripper2.write(gripper2Angle);
+    Wrist.write(wristAngle);
+    Serial.println("wristAngle is " + String(wristAngle));
+}
+
+void initServos()
+{
+    // 1. Allocate hardware timers specifically for the servos
+    // This stops them from fighting with your DC motors!
+    ESP32PWM::allocateTimer(0);
+    ESP32PWM::allocateTimer(1);
+    ESP32PWM::allocateTimer(2);
+    ESP32PWM::allocateTimer(3);
+
+    // 2. Set the standard frequency for analog servos (50 Hz)
+    Shoulder.setPeriodHertz(50);
+    Elbow.setPeriodHertz(50);
+    Gripper1.setPeriodHertz(50);
+    Gripper2.setPeriodHertz(50);
+    Wrist.setPeriodHertz(50);
+
+    // 3. Attach servos one by one with a small delay
+    // This prevents all 5 motors from spiking the power supply at once
+    Shoulder.attach(SHOULDER_SERVO, 500, 2400); // 500-2400us is standard
+    Shoulder.write(shoulderAngle);
+    delay(150);
+
+    Elbow.attach(ELBOW_SERVO, 500, 2400);
+    Elbow.write(elbowAngle);
+    delay(150);
+
+    Gripper1.attach(GRIPPER1_SERVO, 500, 2400);
+    Gripper1.write(gripper1Angle);
+    delay(150);
+
+    Gripper2.attach(GRIPPER2_SERVO, 500, 2400);
+    Gripper2.write(gripper2Angle);
+    delay(150);
+
+    Wrist.attach(WRIST_SERVO, 500, 2400);
+    Wrist.write(wristAngle);
+    delay(150);
+
+    Serial.println("All Servos Initialized Safely.");
 }

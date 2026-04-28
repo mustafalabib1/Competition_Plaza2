@@ -57,6 +57,18 @@
 // void handleRobotArmControl();
 // void initServos();
 
+// // make task for maze solveing
+// TaskHandle_t MazeSolveTask_handle = NULL;
+
+// void MazeSolveTask(void *parameters)
+// {
+//     for (;;)
+//     {
+//         solveMaze();
+//         // vTaskDelay(5 / portTICK_PERIOD_MS);
+//     }
+// }
+
 // void setup()
 // {
 //     // put your setup code here, to run once:
@@ -67,6 +79,18 @@
 //     TofInit();
 //     initServos();
 //     solveMazeInit();
+
+//     // create maze task
+//     xTaskCreate(
+//         MazeSolveTask,        // function name
+//         "MazeSolveTask",      // Task Name
+//         4096,                 // CRITICAL FIX: Increased memory from 1000 to 4096
+//         NULL,                 // Task parameters
+//         1,                    // Priority
+//         &MazeSolveTask_handle // CRITICAL FIX: You MUST use the '&' symbol here!
+//     );
+//     // Now this will correctly suspend the maze task, instead of freezing setup()!
+//     vTaskSuspend(MazeSolveTask_handle);
 
 //     PS4.begin("00:4b:12:3c:5a:82"); // Replace with your ESP32's MAC address
 //     Serial.println("Waiting for PS4 controller to connect...");
@@ -81,7 +105,7 @@
 //         if (isAutonomousMode)
 //         {
 //             // Autonomous mode logic here (not implemented in this example)
-//             solveMaze();
+//             // solveMaze();
 //         }
 //         else
 //         {
@@ -104,13 +128,12 @@
 //         isAutonomousMode = !isAutonomousMode; // Toggle the mode
 //         if (isAutonomousMode)
 //         {
+//             vTaskResume(MazeSolveTask_handle);
 //             Serial.println("Switched to Autonomous Mode");
-//             solveMaze(); // Start maze solving immediately upon switching to autonomous mode
-//             // Stop motors when switching modes to prevent unexpected movement
-//             moveCar(0, 0);
 //         }
 //         else
 //         {
+//             vTaskSuspend(MazeSolveTask_handle);
 //             Serial.println("Switched to Teleop Mode");
 //         }
 //     }
