@@ -76,10 +76,10 @@ void solveMaze()
   switch (currentMazeState)
   {
   case MAZE_TURNING_LEFT:
-    (!robotState.isLeftHandSide) ? Left90() : Right90();
+    Left90() ;
     break;
   case MAZE_TURNING_RIGHT:
-    (!robotState.isLeftHandSide) ? Right90() : Left90();
+    Right90();
     break;
   case MAZE_MOVING_FORWARD:
     moveCar(rightMotorSpeed, leftMotorSpeed);
