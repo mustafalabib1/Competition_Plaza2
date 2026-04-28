@@ -22,6 +22,8 @@
 //     MotorsInit();
 //     TofInit();
 //     solveMazeInit();
+//     leftHandInit();
+
 //     // Initialize Bluetooth communication
 //     SerialBT.begin("ESP32test");
 //     Serial.println("The device started, now you can pair it with bluetooth!");

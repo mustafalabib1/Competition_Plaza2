@@ -16,14 +16,14 @@
 Servo Shoulder, Elbow, Gripper1;
 
 // servo initial angles
-int shoulderAngle = 0;  // Start at a neutral position
+int shoulderAngle = 0; // Start at a neutral position
 int elbowAngle = 0;
 int gripper1Angle = 90;
 
 // --- Constants for Control ---
 // Driving
-const float JOYSTICK_DEADZONE = 0.1f;  // 10% deadzone for joystick
-const float ROTATION_DEADZONE = 0.2f;  // 20% deadzone for rotation
+const float JOYSTICK_DEADZONE = 0.1f; // 10% deadzone for joystick
+const float ROTATION_DEADZONE = 0.2f; // 20% deadzone for rotation
 const int MAX_MOTOR_SPEED = 255;
 
 // Robot Arm
@@ -38,7 +38,7 @@ const int GRIPPER_CLOSED_ANGLE = 0;
 // ducration forward and backward
 int direction = 1;
 // --- Global Variables ---
-bool isAutonomousMode = false;  // Start in teleop mode
+bool isAutonomousMode = false; // Start in teleop mode
 
 unsigned long shoulderDelay = millis();
 unsigned long elbowDelay = millis();
@@ -52,14 +52,17 @@ void initServos();
 // make task for maze solveing
 TaskHandle_t MazeSolveTask_handle = NULL;
 
-void MazeSolveTask(void *parameters) {
-  for (;;) {
+void MazeSolveTask(void *parameters)
+{
+  for (;;)
+  {
     solveMaze();
     // vTaskDelay(5 / portTICK_PERIOD_MS);
   }
 }
 
-void setup() {
+void setup()
+{
   // put your setup code here, to run once:
   Serial.begin(115200);
   initializeRobotState();
@@ -68,31 +71,37 @@ void setup() {
   TofInit();
   initServos();
   solveMazeInit();
+  leftHandInit();
 
   // create maze task
   xTaskCreate(
-    MazeSolveTask,         // function name
-    "MazeSolveTask",       // Task Name
-    4096,                  // CRITICAL FIX: Increased memory from 1000 to 4096
-    NULL,                  // Task parameters
-    1,                     // Priority
-    &MazeSolveTask_handle  // CRITICAL FIX: You MUST use the '&' symbol here!
+      MazeSolveTask,        // function name
+      "MazeSolveTask",      // Task Name
+      4096,                 // CRITICAL FIX: Increased memory from 1000 to 4096
+      NULL,                 // Task parameters
+      1,                    // Priority
+      &MazeSolveTask_handle // CRITICAL FIX: You MUST use the '&' symbol here!
   );
   // Now this will correctly suspend the maze task, instead of freezing setup()!
   vTaskSuspend(MazeSolveTask_handle);
   loadRobotStateFromEEPROM();
-  PS4.begin("00:4b:12:3c:5a:82");  // Replace with your ESP32's MAC address
+  PS4.begin("00:4b:12:3c:5a:82"); // Replace with your ESP32's MAC address
   Serial.println("Waiting for PS4 controller to connect...");
 }
 
-void loop() {
-  if (PS4.isConnected()) {
+void loop()
+{
+  if (PS4.isConnected())
+  {
     handleModeSwitching();
 
-    if (isAutonomousMode) {
+    if (isAutonomousMode)
+    {
       // Autonomous mode logic here (not implemented in this example)
       // solveMaze();
-    } else {
+    }
+    else
+    {
       // --- Teleop Control Logic ---
       handleTeleopDrive();
       handleRobotArmControl();
@@ -100,18 +109,23 @@ void loop() {
   }
 }
 
-void handleModeSwitching() {
+void handleModeSwitching()
+{
   // Use a static variable to track the previous state of the PS button
   // to detect only the button press event, not holding it down.
   static bool lastPsButtonState = false;
   bool currentPsButtonState = PS4.PSButton();
 
-  if (currentPsButtonState && !lastPsButtonState) {
-    isAutonomousMode = !isAutonomousMode;  // Toggle the mode
-    if (isAutonomousMode) {
+  if (currentPsButtonState && !lastPsButtonState)
+  {
+    isAutonomousMode = !isAutonomousMode; // Toggle the mode
+    if (isAutonomousMode)
+    {
       vTaskResume(MazeSolveTask_handle);
       Serial.println("Switched to Autonomous Mode");
-    } else {
+    }
+    else
+    {
       vTaskSuspend(MazeSolveTask_handle);
       Serial.println("Switched to Teleop Mode");
     }
@@ -119,7 +133,8 @@ void handleModeSwitching() {
   lastPsButtonState = currentPsButtonState;
 }
 
-void handleTeleopDrive() {
+void handleTeleopDrive()
+{
   // Read and normalize joystick values
   float y = constrain(-PS4.LStickY() / 127.0f, -1.0f, 1.0f);
   float rotation = constrain(PS4.RStickX() / 127.0f, -1.0f, 1.0f);
@@ -138,26 +153,31 @@ void handleTeleopDrive() {
   // Convert normalized values to motor speeds and drive the robot
   driveMecanum(0, y * MAX_MOTOR_SPEED * direction, rotation * MAX_MOTOR_SPEED);
 }
-void handleRobotArmControl() {
+void handleRobotArmControl()
+{
   // --- Shoulder Control ---
   if (PS4.Up())
-    if (millis() - shoulderDelay >= 3) {
+    if (millis() - shoulderDelay >= 3)
+    {
       shoulderAngle += ARM_ANGLE_STEP;
       shoulderDelay = millis();
     }
   if (PS4.Down())
-    if (millis() - shoulderDelay >= 3) {
+    if (millis() - shoulderDelay >= 3)
+    {
       shoulderAngle -= ARM_ANGLE_STEP;
       shoulderDelay = millis();
     }
   // --- Elbow Control ---
   if (PS4.Triangle())
-    if (millis() - elbowDelay >= 3) {
+    if (millis() - elbowDelay >= 3)
+    {
       elbowAngle += ARM_ANGLE_STEP;
       elbowDelay = millis();
     }
   if (PS4.Cross())
-    if (millis() - elbowDelay >= 3) {
+    if (millis() - elbowDelay >= 3)
+    {
       elbowAngle -= ARM_ANGLE_STEP;
       elbowDelay = millis();
     }
@@ -174,9 +194,15 @@ void handleRobotArmControl() {
     direction = -1;
 
   if (PS4.R2())
+  {
     robotState.isLeftHandSide = true;
+    rightHandInit();
+  }
   if (PS4.L2())
+  {
     robotState.isLeftHandSide = false;
+    leftHandInit();
+  }
 
   // Constrain all angles to prevent servo damage
   shoulderAngle = constrain(shoulderAngle, ARM_MIN_ANGLE, ARM_MAX_ANGLE);
@@ -189,7 +215,8 @@ void handleRobotArmControl() {
   Gripper1.write(gripper1Angle);
 }
 
-void initServos() {
+void initServos()
+{
   // 1. Allocate hardware timers specifically for the servos
   // This stops them from fighting with your DC motors!
   ESP32PWM::allocateTimer(0);
@@ -204,7 +231,7 @@ void initServos() {
 
   // 3. Attach servos one by one with a small delay
   // This prevents all 5 motors from spiking the power supply at once
-  Shoulder.attach(SHOULDER_SERVO, 500, 2400);  // 500-2400us is standard
+  Shoulder.attach(SHOULDER_SERVO, 500, 2400); // 500-2400us is standard
   Shoulder.write(shoulderAngle);
   delay(150);
 
