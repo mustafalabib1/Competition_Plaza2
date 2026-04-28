@@ -72,19 +72,14 @@ void solveMaze()
   readSensors();
   stablilizerControl();
   decide();
-  Serial.println("=== Sensor Readings ===");
-  Serial.println("Front Distance: " + String(FrontDistance) + "the front threshold is " + String(robotState.frontThreshold));
-  Serial.println("Right Distance: " + String(RightDistance) + "the right threshold is " + String(robotState.rightThreshold));
-  Serial.println("Left Distance: " + String(LeftDistance) + "the left threshold is " + String(robotState.leftThreshold));
-  Serial.println("The crruent maze state is " + String(currentMazeState));
   // Implement maze solving logic here
   switch (currentMazeState)
   {
   case MAZE_TURNING_LEFT:
-    Left90();
+    !robotState.isLeftHandSide ? Left90() : Right90();
     break;
   case MAZE_TURNING_RIGHT:
-    Right90();
+    !robotState.isLeftHandSide ? Right90() : Left90();
     break;
   case MAZE_MOVING_FORWARD:
     moveCar(rightMotorSpeed, leftMotorSpeed);

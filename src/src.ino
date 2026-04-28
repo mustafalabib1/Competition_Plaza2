@@ -17,7 +17,7 @@ Servo Shoulder, Elbow, Gripper1;
 
 // servo initial angles
 int shoulderAngle = 0;  // Start at a neutral position
-int elbowAngle = 90;
+int elbowAngle = 0;
 int gripper1Angle = 90;
 
 // --- Constants for Control ---
