@@ -43,7 +43,8 @@ const int GRIPPER_CLOSED_ANGLE = 0;
 const int GRIPPER_CONTINUOUS_FORWARD = 180; // Spin forward
 const int GRIPPER_CONTINUOUS_BACKWARD = 0;  // Spin backward
 const int GRIPPER_CONTINUOUS_STOP = 90;     // Stop spinning
-
+// ducration forward and backward
+int direction = 1;
 // --- Global Variables ---
 bool isAutonomousMode = false; // Start in teleop mode
 
@@ -158,7 +159,7 @@ void handleTeleopDrive()
     rotation = rotation * fabs(rotation);
 
     // Convert normalized values to motor speeds and drive the robot
-    driveMecanum(0, y * MAX_MOTOR_SPEED, rotation * MAX_MOTOR_SPEED);
+    driveMecanum(0, y * MAX_MOTOR_SPEED * direction, rotation * MAX_MOTOR_SPEED);
 }
 void handleRobotArmControl()
 {
@@ -197,17 +198,9 @@ void handleRobotArmControl()
 
     // --- Wrist Control ---
     if (PS4.R1())
-        if (millis() - WristDelay >= 3)
-        {
-            wristAngle += ARM_ANGLE_STEP;
-            WristDelay = millis();
-        }
+        direction = 1;
     if (PS4.L1())
-        if (millis() - WristDelay >= 3)
-        {
-            wristAngle -= ARM_ANGLE_STEP;
-            WristDelay = millis();
-        }
+        direction = -1;
 
     // --- Gripper 2 (Continuous Rotation Servo) ---
     if (PS4.R2())
