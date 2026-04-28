@@ -72,14 +72,19 @@ void solveMaze()
   readSensors();
   stablilizerControl();
   decide();
+  Serial.println("=== Sensor Readings ===");
+  Serial.println("Front Distance: " + String(FrontDistance) + "the front threshold is " + String(robotState.frontThreshold));
+  Serial.println("Right Distance: " + String(RightDistance) + "the right threshold is " + String(robotState.rightThreshold));
+  Serial.println("Left Distance: " + String(LeftDistance) + "the left threshold is " + String(robotState.leftThreshold));
+  Serial.println("The crruent maze state is " + String(currentMazeState));
   // Implement maze solving logic here
   switch (currentMazeState)
   {
   case MAZE_TURNING_LEFT:
-    (!robotState.isLeftHandSide) ? Left90() : Right90();
+    Left90();
     break;
   case MAZE_TURNING_RIGHT:
-    (!robotState.isLeftHandSide) ? Right90() : Left90();
+    Right90();
     break;
   case MAZE_MOVING_FORWARD:
     moveCar(rightMotorSpeed, leftMotorSpeed);
@@ -92,50 +97,6 @@ void solveMaze()
     }
     break;
   default:
-    break;
-  }
-}
-
-void stablilizerControlTest(char command)
-{
-  switch (command)
-  {
-  case 'F': // Move forward
-    stablilizerControl();
-    moveCar(rightMotorSpeed, leftMotorSpeed);
-    break;
-  case 'B': // Move backward
-    driveMecanum(0, -255, 0);
-    break;
-  case 'R': // Turn right
-    driveMecanum(255, 0, 0);
-    break;
-  case 'L': // Turn left
-    driveMecanum(-255, 0, 0);
-    break;
-  case 'G': // Forward left
-    driveMecanum(-255, 255, 0);
-    break;
-  case 'H': // Forward right
-    driveMecanum(255, -255, 0);
-    break;
-  case 'I': // Backward left
-    driveMecanum(-255, -255, 0);
-    break;
-  case 'J': // Backward right
-    driveMecanum(255, 255, 0);
-    break;
-  case 'S': // Stop all motors
-    moveCar(0, 0);
-    break;
-
-  case 'Y': // Honk horn
-  case 'X': // Turn headlight ON
-  case 'x': // Turn headlight OFF
-
-  default:
-    // Invalid command, stop the robot
-    moveCar(0, 0);
     break;
   }
 }

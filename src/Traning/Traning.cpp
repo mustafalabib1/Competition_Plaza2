@@ -164,21 +164,6 @@
 //             }
 //             SerialBT.println("Exited RC mode.");
 //         }
-//         else if (command.startsWith("stab"))
-//         {
-//             SerialBT.println("Entered Stabilizer Test mode. Send 'X' to exit.");
-//             char stabCommand = 's';
-//             while (stabCommand != 'X' && stabCommand != 'x')
-//             {
-//                 if (SerialBT.available())
-//                 {
-//                     stabCommand = SerialBT.read();
-//                     stablilizerControlTest(stabCommand);
-//                 }
-//                 delay(10); // Prevent tight loop from starving the watchdog
-//             }
-//             SerialBT.println("Exited Stabilizer Test mode.");
-//         }
 //         else if (command == "mazef")
 //         {
 //             unsigned long previousMillis = millis();
