@@ -204,9 +204,11 @@ void handleRobotArmControl()
 
     // --- Gripper 2 (Continuous Rotation Servo) ---
     if (PS4.R2())
-        gripper2Angle = GRIPPER_CONTINUOUS_FORWARD; // Spin forward
+        // gripper2Angle = GRIPPER_CONTINUOUS_FORWARD; // Spin forward
+        robotState.isLeftHandSide = true;
     else if (PS4.L2())
-        gripper2Angle = GRIPPER_CONTINUOUS_BACKWARD; // Spin backward
+        // gripper2Angle = GRIPPER_CONTINUOUS_BACKWARD; // Spin backward
+        robotState.isLeftHandSide = false;
     else
         gripper2Angle = GRIPPER_CONTINUOUS_STOP; // Stop spinning
 
