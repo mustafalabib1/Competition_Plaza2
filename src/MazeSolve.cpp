@@ -52,10 +52,7 @@ void decide()
   // Implement maze solving logic here
   if (LeftDistance > robotState.leftThreshold)
   {
-    if (!robotState.isLeftHandSide)
-      currentMazeState = MAZE_TURNING_LEFT;
-    else
-      currentMazeState = MAZE_TURNING_RIGHT;
+    currentMazeState = MAZE_TURNING_LEFT;
   }
   else if (FrontDistance > robotState.frontThreshold)
   {
@@ -63,10 +60,7 @@ void decide()
   }
   else if (RightDistance > robotState.rightThreshold)
   {
-    if (!robotState.isLeftHandSide)
-      currentMazeState = MAZE_TURNING_RIGHT;
-    else
-      currentMazeState = MAZE_TURNING_LEFT;
+    currentMazeState = MAZE_TURNING_RIGHT;
   }
   else
   {
@@ -82,10 +76,10 @@ void solveMaze()
   switch (currentMazeState)
   {
   case MAZE_TURNING_LEFT:
-    Left90();
+    (!robotState.isLeftHandSide) ? Left90() : Right90();
     break;
   case MAZE_TURNING_RIGHT:
-    Right90();
+    (!robotState.isLeftHandSide) ? Right90() : Left90();
     break;
   case MAZE_MOVING_FORWARD:
     moveCar(rightMotorSpeed, leftMotorSpeed);
