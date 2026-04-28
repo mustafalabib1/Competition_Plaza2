@@ -144,24 +144,21 @@ void handleTeleopDrive()
 {
     // Read and normalize joystick values
     float y = constrain(-PS4.LStickY() / 127.0f, -1.0f, 1.0f);
-    float x = constrain(PS4.LStickX() / 127.0f, -1.0f, 1.0f);
     float rotation = constrain(PS4.RStickX() / 127.0f, -1.0f, 1.0f);
 
     // Apply deadzone to prevent drift from slight joystick movements
     if (fabs(y) < JOYSTICK_DEADZONE)
         y = 0;
-    if (fabs(x) < JOYSTICK_DEADZONE)
-        x = 0;
+
     if (fabs(rotation) < ROTATION_DEADZONE)
         rotation = 0;
 
     // Apply a non-linear response curve (squaring the input) for finer control at low speeds
     y = y * fabs(y);
-    x = x * fabs(x);
     rotation = rotation * fabs(rotation);
 
     // Convert normalized values to motor speeds and drive the robot
-    driveMecanum(x * MAX_MOTOR_SPEED, y * MAX_MOTOR_SPEED, rotation * MAX_MOTOR_SPEED);
+    driveMecanum(0, y * MAX_MOTOR_SPEED, rotation * MAX_MOTOR_SPEED);
 }
 void handleRobotArmControl()
 {
