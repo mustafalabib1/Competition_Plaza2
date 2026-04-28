@@ -12,17 +12,13 @@
 // #define SHOULDER_SERVO 13
 // #define ELBOW_SERVO 25
 // #define GRIPPER1_SERVO 32
-// #define GRIPPER2_SERVO 18
-// #define WRIST_SERVO 23
 
-// Servo Shoulder, Elbow, Gripper1, Gripper2, Wrist;
+// Servo Shoulder, Elbow, Gripper1;
 
 // // servo initial angles
-// int shoulderAngle = 90; // Start at a neutral position
+// int shoulderAngle = 0; // Start at a neutral position
 // int elbowAngle = 90;
 // int gripper1Angle = 90;
-// int gripper2Angle = 90;
-// int wristAngle = 135;
 
 // // --- Constants for Control ---
 // // Driving
@@ -39,16 +35,11 @@
 // const int GRIPPER_OPEN_ANGLE = 90;
 // const int GRIPPER_CLOSED_ANGLE = 0;
 
-// // Gripper 2 (Continuous Rotation Servo)
-// const int GRIPPER_CONTINUOUS_FORWARD = 180; // Spin forward
-// const int GRIPPER_CONTINUOUS_BACKWARD = 0;  // Spin backward
-// const int GRIPPER_CONTINUOUS_STOP = 90;     // Stop spinning
 // // ducration forward and backward
 // int direction = 1;
 // // --- Global Variables ---
 // bool isAutonomousMode = false; // Start in teleop mode
 
-// unsigned long WristDelay = millis();
 // unsigned long shoulderDelay = millis();
 // unsigned long elbowDelay = millis();
 
@@ -196,33 +187,25 @@
 //     if (PS4.Left())
 //         gripper1Angle = GRIPPER_CLOSED_ANGLE;
 
-//     // --- Wrist Control ---
 //     if (PS4.R1())
 //         direction = 1;
 //     if (PS4.L1())
 //         direction = -1;
 
-//     // --- Gripper 2 (Continuous Rotation Servo) ---
 //     if (PS4.R2())
-//         gripper2Angle = GRIPPER_CONTINUOUS_FORWARD; // Spin forward
-//     else if (PS4.L2())
-//         gripper2Angle = GRIPPER_CONTINUOUS_BACKWARD; // Spin backward
-//     else
-//         gripper2Angle = GRIPPER_CONTINUOUS_STOP; // Stop spinning
+//         robotState.isLeftHandSide = true;
+//     if (PS4.L2())
+//         robotState.isLeftHandSide = false;
 
 //     // Constrain all angles to prevent servo damage
 //     shoulderAngle = constrain(shoulderAngle, ARM_MIN_ANGLE, ARM_MAX_ANGLE);
 //     elbowAngle = constrain(elbowAngle, ARM_MIN_ANGLE, ARM_MAX_ANGLE);
-//     wristAngle = constrain(wristAngle, 0, 150);
 //     // gripper1Angle is set to specific values, but constraining is good practice
 //     gripper1Angle = constrain(gripper1Angle, GRIPPER_CLOSED_ANGLE, GRIPPER_OPEN_ANGLE);
 //     // Write angles to servos
 //     Shoulder.write(shoulderAngle);
 //     Elbow.write(elbowAngle);
 //     Gripper1.write(gripper1Angle);
-//     Gripper2.write(gripper2Angle);
-//     Wrist.write(wristAngle);
-//     Serial.println("wristAngle is " + String(wristAngle));
 // }
 
 // void initServos()
@@ -238,8 +221,6 @@
 //     Shoulder.setPeriodHertz(50);
 //     Elbow.setPeriodHertz(50);
 //     Gripper1.setPeriodHertz(50);
-//     Gripper2.setPeriodHertz(50);
-//     Wrist.setPeriodHertz(50);
 
 //     // 3. Attach servos one by one with a small delay
 //     // This prevents all 5 motors from spiking the power supply at once
@@ -253,14 +234,6 @@
 
 //     Gripper1.attach(GRIPPER1_SERVO, 500, 2400);
 //     Gripper1.write(gripper1Angle);
-//     delay(150);
-
-//     Gripper2.attach(GRIPPER2_SERVO, 500, 2400);
-//     Gripper2.write(gripper2Angle);
-//     delay(150);
-
-//     Wrist.attach(WRIST_SERVO, 500, 2400);
-//     Wrist.write(wristAngle);
 //     delay(150);
 
 //     Serial.println("All Servos Initialized Safely.");
