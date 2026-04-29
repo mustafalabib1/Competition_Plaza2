@@ -157,26 +157,26 @@ void handleRobotArmControl()
 {
   // --- Shoulder Control ---
   if (PS4.Up())
-    if (millis() - shoulderDelay >= 3)
+    if (millis() - shoulderDelay >= 6)
     {
       shoulderAngle += ARM_ANGLE_STEP;
       shoulderDelay = millis();
     }
   if (PS4.Down())
-    if (millis() - shoulderDelay >= 3)
+    if (millis() - shoulderDelay >= 6)
     {
       shoulderAngle -= ARM_ANGLE_STEP;
       shoulderDelay = millis();
     }
   // --- Elbow Control ---
   if (PS4.Triangle())
-    if (millis() - elbowDelay >= 3)
+    if (millis() - elbowDelay >= 6)
     {
       elbowAngle += ARM_ANGLE_STEP;
       elbowDelay = millis();
     }
   if (PS4.Cross())
-    if (millis() - elbowDelay >= 3)
+    if (millis() - elbowDelay >= 6)
     {
       elbowAngle -= ARM_ANGLE_STEP;
       elbowDelay = millis();
