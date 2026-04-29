@@ -50,13 +50,13 @@ void Swap(double &a, double &b)
 void decide()
 {
   // Implement maze solving logic here
-  if (LeftDistance > robotState.leftThreshold)
-  {
-    currentMazeState = MAZE_TURNING_LEFT;
-  }
-  else if (FrontDistance > robotState.frontThreshold)
+  if (FrontDistance > robotState.frontThreshold)
   {
     currentMazeState = MAZE_MOVING_FORWARD;
+  }
+  else if (LeftDistance > robotState.leftThreshold)
+  {
+    currentMazeState = MAZE_TURNING_LEFT;
   }
   else if (RightDistance > robotState.rightThreshold)
   {
@@ -76,10 +76,18 @@ void solveMaze()
   switch (currentMazeState)
   {
   case MAZE_TURNING_LEFT:
-    !robotState.isLeftHandSide ? Left90() : Right90();
+    !robotState.isLeftHandSide ? rotateDegrees(-90) : rotateDegrees(90);
+    while (!isRotationComplete())
+    {
+      // Wait for rotation to complete
+    }
     break;
   case MAZE_TURNING_RIGHT:
-    !robotState.isLeftHandSide ? Right90() : Left90();
+    !robotState.isLeftHandSide ? rotateDegrees(90) : rotateDegrees(-90);
+    while (!isRotationComplete())
+    {
+      // Wait for rotation to complete
+    }
     break;
   case MAZE_MOVING_FORWARD:
     moveCar(rightMotorSpeed, leftMotorSpeed);

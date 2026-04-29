@@ -79,12 +79,12 @@ void Right90()
 void Left90()
 {
   unsigned long pretime = millis();
-  while (millis() - pretime <= 800)
+  while (millis() - pretime <= 750)
   {
     moveCar(-50, 255);
   }
   pretime = millis();
-  while (millis() - pretime <= 250)
+  while (millis() - pretime <= 334)
   {
     moveCar(255, 255);
   }
